@@ -11,7 +11,7 @@ from Cython.Distutils import build_ext
 setup(
   name = 'bedtools-python',
   ext_modules=[
-    Extension("bedtools-python",
+    Extension("btpython",
               sources=["bedtools-python/bedtools-python.pyx", "src/bedFile.cpp"],
               libraries=["stdc++"],
               include_dirs=["src/"],

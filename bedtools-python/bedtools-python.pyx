@@ -6,8 +6,8 @@
             University of Virginia
     Email:  aaronquinlan at gmail dot com
 """
-
-
+from cython.operator cimport dereference as deref, preincrement as inc #dereference and increment operators
+from cpython cimport bool 
 
 """
     Expose STL strings to Cython.
@@ -17,8 +17,27 @@ cdef extern from "<string>" namespace "std":
         string()
         string(char *)
         char * c_str()
+        
+"""
+    Expose STL vectors to Cython.
+"""
+cdef extern from "<vector>" namespace "std":
+    cdef cppclass vector[T]:
+        cppclass iterator:
+            T operator*()
+            iterator operator++()
+            bint operator==(iterator)
+            bint operator!=(iterator)
+        vector()
+        void push_back(T&)
+        T& operator[](int)
+        T& at(int)
+        iterator begin()
+        iterator end()
 
 
+
+            
 """
     ***********************************************
     STATUS:  Doesn't yet work.  'Splainin' to do.
@@ -41,15 +60,43 @@ cdef extern from "<string>" namespace "std":
     Create Cython definitions for the Interval API defined in Interval.h
 """
 cdef extern from "bedFile.h":
+    
+    cdef enum BedLineStatus:
+        BED_INVALID = -1
+        BED_HEADER  = 0
+        BED_BLANK   = 1
+        BED_VALID   = 2
+    
+    ctypedef unsigned int CHRPOS
+    
+    cdef struct BED:
+        string chrom
+        CHRPOS start
+        CHRPOS end 
+        string name
+        string score
+        string strand
+        vector[string] otherFields
+        vector[BED] overlaps
+    
     cdef cppclass BedFile:
         BedFile(string &)
         Open()
         Close()
-        BedLineStatus GetNextBed(BED &bed, int &lineNum);
-        loadBedFileIntoMap();
+        BedLineStatus GetNextBed(BED &bed, int &lineNum)
+        loadBedFileIntoMap()
 
-        FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, string strand, vector<BED> &hits, bool forceStrand);
+        vector[BED] FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, string strand, bool forceStrand)
         
+        
+cdef list vec2list(vector[BED] bv):
+    cdef list l = []
+    cdef size_t size, i
+    size = bv.size()
+    for i in range(size):
+        l.append(bv.at(i))
+    return l
+
         
 cdef class IntervalFile:
     """
@@ -72,21 +119,21 @@ cdef class IntervalFile:
     """
     cdef BedFile *intervalFile_ptr
 
-    def __init__(self, chrom, start, end):
-        self.intervalFile_ptr = new Interval(string(intervalFile))
+    def __init__(self, intervalFile):
+        self.intervalFile_ptr = new BedFile(string(intervalFile))
 
     def __dealloc__(self):
         del self.intervalFile_ptr
         
     def load(self):
-        intervalFile_ptr.loadBedFileIntoMap()
+        self.intervalFile_ptr.loadBedFileIntoMap()
         
-    def findOverlaps(self, chrom, start, end, strand, hits, forceStrand):
+    def findOverlaps(self, chrom, start, end, strand, forceStrand):
         """
         ISSUES:
             1. Python will expect hits to be returned as a list, not in a pass-by-reference manner.  FIX.
         """
-        intervalFile_ptr.FindOverlapsPerBin()
-    
+        return vec2list(self.intervalFile_ptr.FindOverlapsPerBin(string(chrom), int(start), int(end), string(strand), bool(forceStrand)))
+
 
 
