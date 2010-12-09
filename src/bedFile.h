@@ -323,7 +323,7 @@ class BedFile {
 public:
 
     // Constructor 
-    BedFile(string &);
+    BedFile(string bedFile);
 
     // Destructor
     ~BedFile(void);

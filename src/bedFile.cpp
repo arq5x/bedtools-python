@@ -115,7 +115,7 @@ Class methods
 *******************************************/
 
 // Constructor
-BedFile::BedFile(string &bedFile)
+BedFile::BedFile(string bedFile)
 : bedFile(bedFile),
 _typeIsKnown(false)
 {}
