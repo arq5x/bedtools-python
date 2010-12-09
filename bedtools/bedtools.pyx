@@ -1,5 +1,5 @@
 """
-    BedFile.pyx: A Cython wrapper for the BEDTools BedFile class
+    bedtools.pyx: A Cython wrapper for the BEDTools BedFile class
     
     Author: Aaron Quinlan
     Affl:   Center for Public Health Genomics
@@ -8,7 +8,6 @@
 """
 from cython.operator cimport dereference as deref, preincrement as inc #dereference and increment operators
 from cpython cimport bool 
-from libcpp.vector cimport vector
 
 """
     Expose STL strings to Cython.
