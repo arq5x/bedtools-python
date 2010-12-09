@@ -19,6 +19,8 @@ cdef extern from "<string>" namespace "std":
         string(char *)
         char * c_str()
 
+from libcpp.vector cimport vector
+
 
             
 """
@@ -75,13 +77,10 @@ cdef extern from "bedFile.h":
 cdef class Bed:
     cdef BED _bed
 
-# need factory method to create
-# http://wiki.cython.org/FAQ#CanCythoncreateobjectsorapplyoperatorstolocallycreatedobjectsaspureCcode.3F
 cdef Bed create_bed(BED b):
     cdef Bed pyb = Bed.__new__(Bed)
     pyb._bed = b
     return pyb
-
 
 cdef list vec2list(vector[BED] bv):
     cdef list l = []
@@ -91,6 +90,8 @@ cdef list vec2list(vector[BED] bv):
     for i in range(size):
         l.append(create_bed(bv.at(i)))
     return l
+
+
 
         
 cdef class IntervalFile:
