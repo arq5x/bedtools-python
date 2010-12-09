@@ -11,13 +11,13 @@ from Cython.Distutils import build_ext
 setup(
   name = 'bedtools',
   ext_modules=[
-    Extension("bedtools",
-              sources=["bedtools/bedtools.pyx", "src/bedFile.cpp"],
+    Extension("bedtools/cbedtools",
+              sources=["bedtools/cbedtools.pyx", "src/bedFile.cpp"],
               libraries=["stdc++"],
               include_dirs=["src/"],
               language="c++"),
     ],
-    package_data = {'src': ['*.pyx', "*.c", "*.h", "README.rst"]},
+    package_data = {'src': ['*.pyx', "*.c", "*.cpp", "*.h", "README.rst"]},
     package_dir = {"bedtools": "bedtools"},
     cmdclass = {'build_ext': build_ext},
     packages = ['bedtools'],
