@@ -17,23 +17,8 @@ cdef extern from "<string>" namespace "std":
         string()
         string(char *)
         char * c_str()
-        
-"""
-    Expose STL vectors to Cython.
-"""
-cdef extern from "<vector>" namespace "std":
-    cdef cppclass vector[T]:
-        cppclass iterator:
-            T operator*()
-            iterator operator++()
-            bint operator==(iterator)
-            bint operator!=(iterator)
-        vector()
-        void push_back(T&)
-        T& operator[](int)
-        T& at(int)
-        iterator begin()
-        iterator end()
+
+from libcpp.vector cimport vector
 
 
 
@@ -88,14 +73,25 @@ cdef extern from "bedFile.h":
 
         vector[BED] FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, string strand, bool forceStrand)
         
+
+cdef class Bed:
+    cdef BED _bed
+
+cdef Bed create_bed(BED b):
+    cdef Bed pyb = Bed.__new__(Bed)
+    pyb._bed = b
+    return pyb
         
 cdef list vec2list(vector[BED] bv):
     cdef list l = []
     cdef size_t size, i
+    cdef BED b
     size = bv.size()
     for i in range(size):
-        l.append(bv.at(i))
+        l.append(create_bed(bv.at(i)))
     return l
+
+
 
         
 cdef class IntervalFile:

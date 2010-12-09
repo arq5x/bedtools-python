@@ -9,18 +9,18 @@ from distutils.extension import Extension
 from Cython.Distutils import build_ext
 
 setup(
-  name = 'bedtools-python',
+  name = 'bedtools',
   ext_modules=[
-    Extension("btpython",
-              sources=["bedtools-python/bedtools-python.pyx", "src/bedFile.cpp"],
+    Extension("bedtools",
+              sources=["bedtools/bedtools.pyx", "src/bedFile.cpp"],
               libraries=["stdc++"],
               include_dirs=["src/"],
               language="c++"),
     ],
     package_data = {'src': ['*.pyx', "*.c", "*.h", "README.rst"]},
-    package_dir = {"bedtools-python": "bedtools-python"},
+    package_dir = {"bedtools": "bedtools"},
     cmdclass = {'build_ext': build_ext},
-    packages = ['bedtools-python'],
+    packages = ['bedtools'],
     author = "Aaron Quinlan",
     author_email="aaronquinlan@gmail.com",
     #test_suite='nose.collector'
