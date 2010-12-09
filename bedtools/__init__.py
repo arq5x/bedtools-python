@@ -1,1 +1,1 @@
-from bedtools-python import BedFile
+from bedtools import IntervalFile

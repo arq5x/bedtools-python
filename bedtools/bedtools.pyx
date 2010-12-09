@@ -9,8 +9,9 @@
 from cython.operator cimport dereference as deref, preincrement as inc #dereference and increment operators
 from cpython cimport bool 
 
+
 """
-    Expose STL strings to Cython.
+    Expose STL strings and vectors to Cython.
 """
 cdef extern from "<string>" namespace "std":
     cdef cppclass string:
@@ -21,25 +22,6 @@ cdef extern from "<string>" namespace "std":
 from libcpp.vector cimport vector
 
 
-            
-"""
-    ***********************************************
-    STATUS:  Doesn't yet work.  'Splainin' to do.
-    
-    GOAL:
-        Expose the most basic interface.  Namely,
-        load a file into a UCSC-bin tree and search
-        for overlaps in the tree.
-        
-    TO DO:
-        1. Need to expose the BED struct.
-        2. Need to expose STL vectors.
-        3. Need to expose the BedLineStatus enum.
-    ***********************************************
-"""
-
-
-     
 """
     Create Cython definitions for the Interval API defined in Interval.h
 """
@@ -65,10 +47,10 @@ cdef extern from "bedFile.h":
     
     cdef cppclass BedFile:
         BedFile(string bedFile)
-        Open()
-        Close()
+        void Open()
+        void Close()
         BedLineStatus GetNextBed(BED &bed, int &lineNum)
-        loadBedFileIntoMap()
+        void loadBedFileIntoMap()
 
         vector[BED] FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, string strand, bool forceStrand)
         
@@ -124,10 +106,6 @@ cdef class IntervalFile:
         self.intervalFile_ptr.loadBedFileIntoMap()
         
     def findOverlaps(self, chrom, start, end, strand, forceStrand):
-        """
-        ISSUES:
-            1. Python will expect hits to be returned as a list, not in a pass-by-reference manner.  FIX.
-        """
         return vec2list(self.intervalFile_ptr.FindOverlapsPerBin(string(chrom), int(start), int(end), string(strand), bool(forceStrand)))
 
 
