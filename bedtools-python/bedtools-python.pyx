@@ -8,6 +8,7 @@
 """
 from cython.operator cimport dereference as deref, preincrement as inc #dereference and increment operators
 from cpython cimport bool 
+from libcpp.vector cimport vector
 
 """
     Expose STL strings to Cython.
@@ -17,24 +18,6 @@ cdef extern from "<string>" namespace "std":
         string()
         string(char *)
         char * c_str()
-        
-"""
-    Expose STL vectors to Cython.
-"""
-cdef extern from "<vector>" namespace "std":
-    cdef cppclass vector[T]:
-        cppclass iterator:
-            T operator*()
-            iterator operator++()
-            bint operator==(iterator)
-            bint operator!=(iterator)
-        vector()
-        void push_back(T&)
-        T& operator[](int)
-        T& at(int)
-        iterator begin()
-        iterator end()
-
 
 
             
@@ -80,7 +63,7 @@ cdef extern from "bedFile.h":
         vector[BED] overlaps
     
     cdef cppclass BedFile:
-        BedFile(string &)
+        BedFile(string bedFile)
         Open()
         Close()
         BedLineStatus GetNextBed(BED &bed, int &lineNum)
@@ -88,13 +71,25 @@ cdef extern from "bedFile.h":
 
         vector[BED] FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, string strand, bool forceStrand)
         
-        
+
+cdef class Bed:
+    cdef BED _bed
+
+# need factory method to create
+# http://wiki.cython.org/FAQ#CanCythoncreateobjectsorapplyoperatorstolocallycreatedobjectsaspureCcode.3F
+cdef Bed create_bed(BED b):
+    cdef Bed pyb = Bed.__new__(Bed)
+    pyb._bed = b
+    return pyb
+
+
 cdef list vec2list(vector[BED] bv):
     cdef list l = []
     cdef size_t size, i
+    cdef BED b
     size = bv.size()
     for i in range(size):
-        l.append(bv.at(i))
+        l.append(create_bed(bv.at(i)))
     return l
 
         
@@ -125,7 +120,7 @@ cdef class IntervalFile:
     def __dealloc__(self):
         del self.intervalFile_ptr
         
-    def load(self):
+    def loadIntoMap(self):
         self.intervalFile_ptr.loadBedFileIntoMap()
         
     def findOverlaps(self, chrom, start, end, strand, forceStrand):
