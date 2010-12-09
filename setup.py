@@ -7,14 +7,16 @@
 from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
+import glob
 
 setup(
   name = 'bedtools',
   ext_modules=[
-    Extension("bedtools/cbedtools",
-              sources=["bedtools/cbedtools.pyx", "src/bedFile.cpp"],
-              libraries=["stdc++"],
+    Extension("bedtools.cbedtools",
+              sources=["bedtools/cbedtools.pyx"] + glob.glob("src/*.cpp"),
+              libraries=["stdc++", 'z'],
               include_dirs=["src/"],
+              depends = glob.glob("src/*.h"),
               language="c++"),
     ],
     package_data = {'src': ['*.pyx', "*.c", "*.cpp", "*.h", "README.rst"]},
