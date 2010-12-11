@@ -30,8 +30,6 @@ cdef class Bed:
     def __repr__(self):
         return "Bed(%s:%i..%i)" % (self._bed.chrom.c_str(), self._bed.start, self._bed.end)
 
-cdef class Bed:
-    cdef BED *_bed
     def __dealloc__(self):
        pass
 
