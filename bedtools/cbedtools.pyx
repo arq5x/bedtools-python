@@ -50,7 +50,7 @@ cdef extern from "bedFile.h":
 
 
 cdef class Bed:
-     cdef BED *_bed
+    cdef BED *_bed
 
 cdef Bed create_bed(BED b):
     cdef Bed pyb = Bed.__new__(Bed)

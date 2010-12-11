@@ -11,11 +11,11 @@ def main():
     rmskFile = IntervalFile("testData/rmsk.hg18.chr21.bed")
     rmskFile.loadIntoMap()
 
-    hits = rmskFile.findOverlaps("chr21", 9719768, 9739768, "+", False)
+    hits = rmskFile.findOverlaps('chr21', 9719768, 9739768, "+", False)
     print hits
 
-    #for hit in hits:
-        #    print hit.start
+    # for hit in hits:
+    #     print hit.start
 
 if __name__ == "__main__":
     main()
