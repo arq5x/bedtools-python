@@ -6,55 +6,40 @@
             University of Virginia
     Email:  aaronquinlan at gmail dot com
 """
-from cython.operator cimport dereference as deref, preincrement as inc #dereference and increment operators
-from cpython cimport bool 
-from libcpp.vector cimport vector
-
-cdef extern from "<string>" namespace "std":
-    cdef cppclass string:
-        string()
-        string(char *)
-        char * c_str()
-
-
-
-"""
-Create Cython definitions for the Interval API defined in Interval.h
-"""
-cdef extern from "bedFile.h":
-    cdef enum BedLineStatus:
-        BED_INVALID = -1
-        BED_HEADER  = 0
-        BED_BLANK   = 1
-        BED_VALID   = 2
-
-    ctypedef unsigned int CHRPOS
-    cdef struct BED:
-        string chrom
-        CHRPOS start
-        CHRPOS end
-        string name
-        string score
-        string strand
-        vector[string] otherFields
-        vector[BED] overlaps
-
-    cdef cppclass BedFile:
-        BedFile(string)
-        void Open()
-        void Close()
-        BedLineStatus GetNextBed(BED &bed, int &lineNum)
-        void loadBedFileIntoMap()
-
-        vector[BED] FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, string strand, bool forceStrand)
-
+include "cbedtools.pxi"
 
 cdef class Bed:
     cdef BED *_bed
 
+    @property
+    def start(self):
+        return self._bed.start
+
+    @property
+    def chrom(self):
+        self._bed.chrom.c_str()
+
+    @property
+    def end(self):
+        return self._bed.end
+
+    @property
+    def name(self):
+        return self._bed.name.c_str()
+
+    def __repr__(self):
+        return "Bed(%s:%i..%i)" % (self._bed.chrom.c_str(), self._bed.start, self._bed.end)
+
+cdef class Bed:
+    cdef BED *_bed
+    def __dealloc__(self):
+       pass
+
 cdef Bed create_bed(BED b):
     cdef Bed pyb = Bed.__new__(Bed)
+    # problem taking reference here?
     pyb._bed = &b
+    print 'in create_bed()', pyb._bed.chrom.c_str()
     return pyb
 
 cdef list vec2list(vector[BED] bv):
