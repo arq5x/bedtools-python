@@ -7,13 +7,14 @@
     Email:  aaronquinlan at gmail dot com
 """
 include "cbedtools.pxi"
+from cython.operator cimport dereference as deref
 
 cdef class Bed:
     cdef BED *_bed
           
     @property
     def chrom(self):
-        self._bed.chrom.c_str()
+        return self._bed.chrom.c_str()
 
     @property
     def start(self):
@@ -31,14 +32,11 @@ cdef class Bed:
         return "Bed(%s:%i..%i)" % (self._bed.chrom.c_str(), self._bed.start, self._bed.end)
 
     def __dealloc__(self):
-       pass
+        del self._bed
 
 cdef Bed create_bed(BED b):
     cdef Bed pyb = Bed.__new__(Bed)
-    # problem taking reference here?
-    pyb._bed = &b
-    print 'in create_bed()', pyb._bed.chrom.c_str()
-    print "%i" % pyb._bed.start
+    pyb._bed = new BED(b.chrom, b.start, b.end, b.name, b.score, b.strand, b.otherFields)
     return pyb
 
 cdef list vec2list(vector[BED] bv):
@@ -63,4 +61,8 @@ cdef class IntervalFile:
         del self.intervalFile_ptr
 
     def findOverlaps(self, chrom, int start, int end, strand, bool forceStrand):
-        return vec2list(self.intervalFile_ptr.FindOverlapsPerBin(string(chrom), start, end, string(strand), bool(forceStrand)))
+        cdef vector[BED] vec_b = self.intervalFile_ptr.FindOverlapsPerBin(string(chrom), start, end, string(strand), bool(forceStrand))
+        try:
+            return vec2list(vec_b)
+        finally:
+            pass

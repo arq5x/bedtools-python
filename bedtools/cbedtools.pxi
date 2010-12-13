@@ -21,7 +21,7 @@ cdef extern from "bedFile.h":
         BED_VALID   = 2
 
     ctypedef unsigned int CHRPOS
-    cdef struct BED:
+    cdef cppclass BED:
         string chrom
         CHRPOS start
         CHRPOS end
@@ -30,6 +30,10 @@ cdef extern from "bedFile.h":
         string strand
         vector[string] otherFields
         vector[BED] overlaps
+        BED()
+        BED(string chrom, CHRPOS start, CHRPOS end, string name,
+             string score, string strand, vector[string] otherFields)
+
 
     cdef cppclass BedFile:
         BedFile(string)
