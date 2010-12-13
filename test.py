@@ -13,9 +13,7 @@ def main():
     hits = rmskFile.findOverlaps("chr21", 9719768, 9739768, "+", False)
 
     for hit in hits:
-        print hit.start, hit.end
-        # print string() stuff not ok??
-        print hit.chrom, hit
+        print hit.chrom, hit.start, hit.end, hit.strand, hit.name, hit.other
 
 if __name__ == "__main__":
     main()

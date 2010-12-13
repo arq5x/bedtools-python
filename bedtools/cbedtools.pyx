@@ -27,6 +27,14 @@ cdef class Bed:
     @property
     def name(self):
         return self._bed.name.c_str()
+        
+    @property
+    def strand(self):
+        return self._bed.strand.c_str()
+        
+    @property
+    def other(self):
+        return string_vec2list(self._bed.otherFields)
             
     def __repr__(self):
         return "Bed(%s:%i..%i)" % (self._bed.chrom.c_str(), self._bed.start, self._bed.end)
@@ -39,7 +47,14 @@ cdef Bed create_bed(BED b):
     pyb._bed = new BED(b.chrom, b.start, b.end, b.name, b.score, b.strand, b.otherFields)
     return pyb
 
-cdef list vec2list(vector[BED] bv):
+cdef list string_vec2list(vector[string] sv):
+    cdef size_t size = sv.size(), i
+    cdef list l = []
+    for i in range(size):
+        l.append(sv.at(i).c_str())
+    return l
+
+cdef list bed_vec2list(vector[BED] bv):
     cdef size_t size = bv.size(), i
     cdef list l = []
     cdef BED b
@@ -63,6 +78,6 @@ cdef class IntervalFile:
     def findOverlaps(self, chrom, int start, int end, strand, bool forceStrand):
         cdef vector[BED] vec_b = self.intervalFile_ptr.FindOverlapsPerBin(string(chrom), start, end, string(strand), bool(forceStrand))
         try:
-            return vec2list(vec_b)
+            return bed_vec2list(vec_b)
         finally:
             pass
