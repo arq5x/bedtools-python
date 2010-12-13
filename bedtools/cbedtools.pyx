@@ -11,7 +11,7 @@ from cython.operator cimport dereference as deref
 
 cdef class Bed:
     cdef BED *_bed
-          
+              
     @property
     def chrom(self):
         return self._bed.chrom.c_str()
