@@ -17,6 +17,5 @@ def main():
         # print string() stuff not ok??
         print hit.chrom, hit
 
-
 if __name__ == "__main__":
     main()

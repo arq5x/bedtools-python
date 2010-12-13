@@ -1,5 +1,6 @@
 from cpython cimport bool
 from libcpp.vector cimport vector
+from cython.operator cimport dereference as deref
 
 cdef extern from "<string>" namespace "std":
     cdef cppclass string:

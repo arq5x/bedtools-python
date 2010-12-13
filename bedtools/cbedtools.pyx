@@ -10,23 +10,23 @@ include "cbedtools.pxi"
 
 cdef class Bed:
     cdef BED *_bed
-
-    @property
-    def start(self):
-        return self._bed.start
-
+          
     @property
     def chrom(self):
         self._bed.chrom.c_str()
 
     @property
+    def start(self):
+        return self._bed.start
+            
+    @property
     def end(self):
         return self._bed.end
-
+    
     @property
     def name(self):
         return self._bed.name.c_str()
-
+            
     def __repr__(self):
         return "Bed(%s:%i..%i)" % (self._bed.chrom.c_str(), self._bed.start, self._bed.end)
 
@@ -38,14 +38,16 @@ cdef Bed create_bed(BED b):
     # problem taking reference here?
     pyb._bed = &b
     print 'in create_bed()', pyb._bed.chrom.c_str()
+    print "%i" % pyb._bed.start
     return pyb
 
 cdef list vec2list(vector[BED] bv):
-    cdef list l = []
     cdef size_t size = bv.size(), i
+    cdef list l = []
     cdef BED b
     for i in range(size):
-        l.append(create_bed(bv.at(i)))
+        b = bv.at(i)
+        l.append(create_bed(b))
     return l
 
 cdef class IntervalFile:
