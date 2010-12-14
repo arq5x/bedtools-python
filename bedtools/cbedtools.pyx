@@ -75,9 +75,39 @@ cdef class IntervalFile:
     def __dealloc__(self):
         del self.intervalFile_ptr
 
-    def findOverlaps(self, chrom, int start, int end, strand, bool forceStrand):
-        cdef vector[BED] vec_b = self.intervalFile_ptr.FindOverlapsPerBin(string(chrom), start, end, string(strand), bool(forceStrand))
-        try:
-            return bed_vec2list(vec_b)
-        finally:
-            pass
+    def findOverlaps(self, chrom, int start, int end, strand = None, float overlapFraction = 0.0):
+        """
+        If strand is not passed, hits will be reported without regard to strand.
+        If strand is passed, hits will only be reported if on the same strand.
+        
+        The overlapFraction defaults to 0.0 so that even 1bp of overlap is sufficient.
+        If overlapFraction is passed, this fraction of the passed BED feature must be "covered."
+        
+        Examples:
+        1. Find all overlaps regardless of degree on either strand
+        findOverlaps("chr1", 10, 20)
+
+        2. Find all overlaps regardless of degree on positive strand
+        findOverlaps("chr1", 10, 20, "+")
+
+        3. Find all overlaps covering at least half of this feature on either strand
+        findOverlaps("chr1", 10, 20, None, 0.5)
+                
+        3. Find all overlaps covering at least half of this feature on negative strand
+        findOverlaps("chr1", 10, 20, "-", 0.5)
+        
+        """
+        cdef vector[BED] vec_b
+        
+        if strand is None:
+            vec_b = self.intervalFile_ptr.FindOverlapsPerBin(string(chrom), start, end, overlapFraction)
+            try:
+                return bed_vec2list(vec_b)
+            finally:
+                pass
+        else:
+            vec_b = self.intervalFile_ptr.FindOverlapsPerBin(string(chrom), start, end, string(strand), overlapFraction)
+            try:
+                return bed_vec2list(vec_b)
+            finally:
+                pass  

@@ -196,8 +196,7 @@ BedLineStatus BedFile::GetNextBed(BED &bed, int &lineNum) {
     return BED_INVALID;
 }
 
-
-vector<BED> BedFile::FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, string strand, bool forceStrand) {
+vector<BED> BedFile::FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, float overlapFraction) {
     vector<BED> hits;
 
     BIN startBin, endBin;
@@ -219,12 +218,46 @@ vector<BED> BedFile::FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, 
 
             for (; bedItr != bedEnd; ++bedItr) {
                 // do we have sufficient overlap?
-                if (overlaps(bedItr->start, bedItr->end, start, end) > 0) {
-                    // skip the hit if not on the same strand (and we care)
-                    if (forceStrand == false) hits.push_back(*bedItr);
-                    else if ( (forceStrand == true) && (strand == bedItr->strand)) {
+                float size = (float) end-start;
+                if ( (float) overlaps(bedItr->start, bedItr->end, start, end) / size > overlapFraction) {
                         hits.push_back(*bedItr);
-                    }
+                }
+            }
+        }
+        startBin >>= _binNextShift;
+        endBin >>= _binNextShift;
+    }
+    return hits;
+}
+
+vector<BED> BedFile::FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, string strand, float overlapFraction) {
+    vector<BED> hits;
+
+    BIN startBin, endBin;
+    startBin = (start >> _binFirstShift);
+    endBin = ((end-1) >> _binFirstShift);
+
+    // loop through each bin "level" in the binning hierarchy
+    for (BINLEVEL i = 0; i < _binLevels; ++i) {
+
+        // loop through each bin at this level of the hierarchy
+        BIN offset = _binOffsetsExtended[i];
+        for (BIN j = (startBin+offset); j <= (endBin+offset); ++j)  {
+
+            // loop through each feature in this chrom/bin and see if it overlaps
+            // with the feature that was passed in.  if so, add the feature to 
+            // the list of hits.
+            vector<BED>::const_iterator bedItr = bedMap[chrom][j].begin();
+            vector<BED>::const_iterator bedEnd = bedMap[chrom][j].end();
+
+            for (; bedItr != bedEnd; ++bedItr) {
+                // do we have sufficient overlap?
+                float size = (float) end-start;
+                if ( (float) overlaps(bedItr->start, bedItr->end, start, end) / size > overlapFraction
+                    &&
+                    (strand == bedItr->strand))
+                {
+                    hits.push_back(*bedItr);
                 }
             }
         }

@@ -42,4 +42,7 @@ cdef extern from "bedFile.h":
         BedLineStatus GetNextBed(BED &bed, int &lineNum)
         void loadBedFileIntoMap()
 
-        vector[BED] FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, string strand, bool forceStrand)
+        # this version doesn't care if the strands match.
+        vector[BED] FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, float overlapFraction)
+        # if strand is passed, require that the strands match,
+        vector[BED] FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, string strand, float overlapFraction)

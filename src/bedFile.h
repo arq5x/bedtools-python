@@ -353,7 +353,9 @@ public:
     // search for all overlapping features in another BED file.
     // Searches through each relevant genome bin on the same chromosome
     // as the single feature. Note: Adapted from kent source "binKeeperFind"
-    vector<BED> FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, string strand, bool forceStrand);
+    vector<BED> FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, float overlapFraction = 0.0);                // ignores strand
+    
+    vector<BED> FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, string strand, float overlapFraction = 0.0); // enforces same strand
 
     // return true if at least one overlap was found.  otherwise, return false.
     bool FindOneOrMoreOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, string strand, 
