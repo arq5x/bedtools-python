@@ -7,7 +7,7 @@ from bedtools import IntervalFile
 
 def main():
 
-    rmskFile = IntervalFile("testData/rmsk.hg18.chr21.bed")
+    rmskFile = IntervalFile("bedtools/tests/data/rmsk.hg18.chr21.bed")
     rmskFile.loadIntoMap()
     
     print "* either strand, any overlap *"
@@ -31,7 +31,7 @@ def main():
         print hit.chrom, hit.start, hit.end, hit.strand, hit.name, hit.other
         
     
-    rmskFile = IntervalFile("testData/rmsk.hg18.chr21.bed.2.gz")
+    rmskFile = IntervalFile("bedtools/tests/data/rmsk.hg18.chr21.bed.2.gz")
     rmskFile.loadIntoMap()
 
     print "* gzip file, either strand, any overlap *"

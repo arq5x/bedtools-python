@@ -23,3 +23,14 @@ bedtools-python
 ---------------
 4. Examples
 ---------------
+
+Load A Bed File
+---------------
+
+::
+
+    >>> from bedtools import IntervalFile
+    >>> bed = IntervalFile('bedtools/tests/data/rmsk.hg18.chr21.bed')
+    >>> bed.loadIntoMap()
+    >>> bed.findOverlaps("chr21", 9719768, 9724768)
+    [Bed(chr21:9719768..9721892), Bed(chr21:9721905..9725582)]
