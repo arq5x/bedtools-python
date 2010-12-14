@@ -85,16 +85,16 @@ cdef class IntervalFile:
         
         Examples:
         1. Find all overlaps regardless of degree on either strand
-        findOverlaps("chr1", 10, 20)
+        hits = findOverlaps("chr1", 10, 20)
 
         2. Find all overlaps regardless of degree on positive strand
-        findOverlaps("chr1", 10, 20, "+")
+        hits = findOverlaps("chr1", 10, 20, "+")
 
         3. Find all overlaps covering at least half of this feature on either strand
-        findOverlaps("chr1", 10, 20, None, 0.5)
+        hits = findOverlaps("chr1", 10, 20, None, 0.5)
                 
-        3. Find all overlaps covering at least half of this feature on negative strand
-        findOverlaps("chr1", 10, 20, "-", 0.5)
+        4. Find all overlaps covering at least half of this feature on negative strand
+        hits = findOverlaps("chr1", 10, 20, "-", 0.5)
         
         """
         cdef vector[BED] vec_b
