@@ -1,7 +1,7 @@
 :Project: bedtools-python
 :Version: 0.1.0
 :Authors: - Aaron Quinlan, University of Virginia
-          - Brent Pederson, University of California, Berkeley
+          - Brent Pedersen, University of California, Berkeley
 :Contact: arq5x@virginia.edu
 
 ===============
