@@ -77,7 +77,7 @@ cdef class IntervalFile:
 
     def findOverlaps(self, chrom, int start, int end, strand = None, float overlapFraction = 0.0):
         """
-        If strand is not passed, hits will be reported without regard to strand.
+        If strand is not passed (or passed as None), hits will be reported without regard to strand.
         If strand is passed, hits will only be reported if on the same strand.
         
         The overlapFraction defaults to 0.0 so that even 1bp of overlap is sufficient.
