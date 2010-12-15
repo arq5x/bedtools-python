@@ -12,6 +12,7 @@ bedtools-python
 1. Requirements
 ---------------
   1. Cython
+	- sudo easy_install cython
   2. GNU compiler
 
 ----------------
@@ -24,14 +25,18 @@ bedtools-python
 	./test.sh
 	# Try it out
 	./example-intersect.py
-	
----------------
-3. Examples
----------------
 
+----------------
+3. The API
+----------------
 
-3a. Intersect one file against another (akin to intersectBed)
----------------------------------------------------------
+	*The IntervalFile class.*
+
+---------------
+4. Examples
+---------------
+4a. Intersect one file against another (akin to intersectBed)
+--------------------------------------------------------------
 
 ::
 
