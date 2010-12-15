@@ -11,21 +11,26 @@ bedtools-python
 ---------------
 1. Requirements
 ---------------
+  1. Cython
+  2. GNU compiler
 
+----------------
+2. Installation
+----------------
+
+::
+
+	python setup.py install
+	./test.sh
+	# Try it out
+	./example-intersect.py
+	
 ---------------
-2. Purpose
+3. Examples
 ---------------
 
----------------
-3. Limitations
----------------
 
----------------
-4. Examples
----------------
-
-
-4a. Intersect one file against another (akin to intersectBed)
+3a. Intersect one file against another (akin to intersectBed)
 ---------------------------------------------------------
 
 ::
