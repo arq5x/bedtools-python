@@ -63,15 +63,58 @@ const BIN _binOffsetsExtended[] = {32678+4096+512+64+8+1, 4096+512+64+8+1, 512+6
 const USHORT _binFirstShift = 14;       /* How much to shift to get to finest bin. */
 const USHORT _binNextShift  = 3;        /* How much to shift to get to next larger bin. */
 
-
-//*************************************************
-// Common data structures
-//*************************************************
-
-struct DEPTH {
-    UINT starts;
-    UINT ends;
+// enum to flag the state of a given line in a BED file.
+enum BedLineStatus
+{ 
+    BED_INVALID = -1,
+    BED_HEADER  = 0,
+    BED_BLANK   = 1,
+    BED_VALID   = 2
 };
+
+// enum to indicate the type of file we are dealing with
+enum FileType
+{ 
+    BED_FILETYPE,
+    GFF_FILETYPE,
+    VCF_FILETYPE
+};
+
+
+// return the genome "bin" for a feature with this start and end
+inline
+BIN getBin(CHRPOS start, CHRPOS end) {
+    --end;
+    start >>= _binFirstShift;
+    end   >>= _binFirstShift;
+    
+    for (register short i = 0; i < _binLevels; ++i) {
+        if (start == end) return _binOffsetsExtended[i] + start;
+        start >>= _binNextShift;
+        end   >>= _binNextShift;
+    }
+    cerr << "start " << start << ", end " << end << " out of range in findBin (max is 512M)" << endl;
+    return 0;
+}
+
+/****************************************************
+// isInteger(s): Tests if string s is a valid integer
+*****************************************************/
+inline bool isInteger(const std::string& s) {
+    int len = s.length();
+    for (int i = 0; i < len; i++) {
+        if (!std::isdigit(s[i])) return false;
+    }    
+    return true;
+}
+
+
+// return the amount of overlap between two features.  Negative if none and the the 
+// number of negative bases is the distance between the two.
+inline 
+int overlaps(CHRPOS aS, CHRPOS aE, CHRPOS bS, CHRPOS bE) {
+    return min(aE, bE) - max(aS, bS);
+}
 
 
 /*
@@ -90,11 +133,8 @@ struct BED {
     // Add'l fields for BED12 and/or custom BED annotations
     vector<string> otherFields;
 
-    // experimental fields for the FJOIN approach.
-    bool   added;
-    bool   finished;
-    // list of hits from another file.
-    vector<BED> overlaps;
+    BedLineStatus   status;
+
     
 public:
     // constructors
@@ -108,9 +148,7 @@ public:
       score(""),
       strand(""),
       otherFields(),
-      added(false),
-      finished(false),
-      overlaps()
+      status()
     {}
         
     // BED3
@@ -154,166 +192,12 @@ public:
 }; // BED
 
 
-/*
-    Structure for each end of a paired BED record
-    mate points to the other end.
-*/
-struct MATE {
-    BED bed;
-    int lineNum;
-    MATE *mate;
-};
-
-
-/*
-    Structure for regular BED COVERAGE records
-*/
-struct BEDCOV {
-
-    // Regular BED fields
-    CHRPOS start;
-    CHRPOS end;
-    
-    string chrom;
-    string name;
-    string score;
-    string strand;
-
-    // Add'l fields for BED12 and/or custom BED annotations 
-    vector<string> otherFields;
-
-    // Additional fields specific to computing coverage
-    map<unsigned int, DEPTH> depthMap;
-    unsigned int count;
-    CHRPOS minOverlapStart;
-};
-
-
-/*
-    Structure for BED COVERAGE records having lists of
-    multiple coverages
-*/
-struct BEDCOVLIST {
-
-    // Regular BED fields
-    CHRPOS start;
-    CHRPOS end;
-    
-    string chrom;
-    string name;
-    string score;
-    string strand;
-
-    // Add'l fields for BED12 and/or custom BED annotations 
-    vector<string> otherFields;
-
-    // Additional fields specific to computing coverage
-    vector< map<unsigned int, DEPTH> > depthMapList;
-    vector<unsigned int> counts;
-    vector<CHRPOS> minOverlapStarts;
-};
-
-
-// enum to flag the state of a given line in a BED file.
-enum BedLineStatus
-{ 
-    BED_INVALID = -1,
-    BED_HEADER  = 0,
-    BED_BLANK   = 1,
-    BED_VALID   = 2
-};
-
-// enum to indicate the type of file we are dealing with
-enum FileType
-{ 
-    BED_FILETYPE,
-    GFF_FILETYPE,
-    VCF_FILETYPE
-};
-
 //*************************************************
 // Data structure typedefs
 //*************************************************
 typedef vector<BED>    bedVector;
-typedef vector<BEDCOV> bedCovVector;
-typedef vector<MATE> mateVector;
-typedef vector<BEDCOVLIST> bedCovListVector;
-
 typedef map<BIN, bedVector,    std::less<BIN> > binsToBeds;
-typedef map<BIN, bedCovVector, std::less<BIN> > binsToBedCovs;
-typedef map<BIN, mateVector, std::less<BIN> > binsToMates;
-typedef map<BIN, bedCovListVector, std::less<BIN> > binsToBedCovLists;
-
 typedef map<string, binsToBeds, std::less<string> >    masterBedMap;
-typedef map<string, binsToBedCovs, std::less<string> > masterBedCovMap;
-typedef map<string, binsToMates, std::less<string> > masterMateMap;
-typedef map<string, binsToBedCovLists, std::less<string> > masterBedCovListMap;
-typedef map<string, bedVector, std::less<string> >     masterBedMapNoBin;
-
-
-// EXPERIMENTAL - wait for TR1
-// typedef vector<BED>    bedVector;
-// typedef vector<BEDCOV> bedCovVector;
-// 
-// typedef tr1::unordered_map<BIN, bedVector> binsToBeds;
-// typedef tr1::unordered_map<BIN, bedCovVector> binsToBedCovs;
-// 
-// typedef tr1::unordered_map<string, binsToBeds>    masterBedMap;
-// typedef tr1::unordered_map<string, binsToBedCovs> masterBedCovMap;
-// typedef tr1::unordered_map<string, bedVector>     masterBedMapNoBin;
-
-
-
-// return the genome "bin" for a feature with this start and end
-inline
-BIN getBin(CHRPOS start, CHRPOS end) {
-    --end;
-    start >>= _binFirstShift;
-    end   >>= _binFirstShift;
-    
-    for (register short i = 0; i < _binLevels; ++i) {
-        if (start == end) return _binOffsetsExtended[i] + start;
-        start >>= _binNextShift;
-        end   >>= _binNextShift;
-    }
-    cerr << "start " << start << ", end " << end << " out of range in findBin (max is 512M)" << endl;
-    return 0;
-}
-
-/****************************************************
-// isInteger(s): Tests if string s is a valid integer
-*****************************************************/
-inline bool isInteger(const std::string& s) {
-    int len = s.length();
-    for (int i = 0; i < len; i++) {
-        if (!std::isdigit(s[i])) return false;
-    }    
-    return true;
-}
-
-
-// return the amount of overlap between two features.  Negative if none and the the 
-// number of negative bases is the distance between the two.
-inline 
-int overlaps(CHRPOS aS, CHRPOS aE, CHRPOS bS, CHRPOS bE) {
-    return min(aE, bE) - max(aS, bS);
-}
-
-
-// Ancillary functions
-void splitBedIntoBlocks(const BED &bed, int lineNum, bedVector &bedBlocks);
-
-
-// BED Sorting Methods 
-bool sortByChrom(const BED &a, const BED &b);   
-bool sortByStart(const BED &a, const BED &b);
-bool sortBySizeAsc(const BED &a, const BED &b);
-bool sortBySizeDesc(const BED &a, const BED &b);
-bool sortByScoreAsc(const BED &a, const BED &b);
-bool sortByScoreDesc(const BED &a, const BED &b);
-bool byChromThenStart(BED const &a, BED const &b);
-
-
 
 //************************************************
 // BedFile Class methods and elements
@@ -335,19 +219,11 @@ public:
     void Close(void);
     
     // Get the next BED entry in an opened BED file.
-    BedLineStatus GetNextBed (BED &bed, int &lineNum);
+    BED GetNextBed ();
 
     // load a BED file into a map keyed by chrom, then bin. value is vector of BEDs
     void loadBedFileIntoMap();
 
-    // load a BED file into a map keyed by chrom, then bin. value is vector of BEDCOVs
-    void loadBedCovFileIntoMap();
-    
-    // load a BED file into a map keyed by chrom, then bin. value is vector of BEDCOVLISTs
-    void loadBedCovListFileIntoMap();
-
-    // load a BED file into a map keyed by chrom. value is vector of BEDs
-    void loadBedFileIntoMapNoBin(); 
 
     // Given a chrom, start, end and strand for a single feature,
     // search for all overlapping features in another BED file.
@@ -355,31 +231,6 @@ public:
     // as the single feature. Note: Adapted from kent source "binKeeperFind"
     vector<BED> FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, float overlapFraction = 0.0);                // ignores strand
     vector<BED> FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, string strand, float overlapFraction = 0.0); // enforces same strand
-
-    // return true if at least one overlap was found.  otherwise, return false.
-    bool FindOneOrMoreOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, string strand, 
-                                        bool forceStrand, float overlapFraction = 0.0);
-
-    // return true if at least one __reciprocal__ overlap was found.  otherwise, return false.
-    bool FindOneOrMoreReciprocalOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, string strand, 
-                                                    bool forceStrand, float overlapFraction = 0.0);
-    
-    // Given a chrom, start, end and strand for a single feature,
-    // increment a the number of hits for each feature in B file
-    // that the feature overlaps
-    void countHits(const BED &a, bool forceStrand);
-    
-    // same as above, but has special logic that processes a set of
-    // BED "blocks" from a single entry so as to avoid over-counting 
-    // each "block" of a single BAM/BED12 as distinct coverage.  That is,
-    // if one read has four block, we only want to count the coverage as
-    // coming from one read, not four.
-    void countSplitHits(const vector<BED> &bedBlock, bool forceStrand);
-
-    // Given a chrom, start, end and strand for a single feature,
-    // increment a the number of hits for each feature in B file
-    // that the feature overlaps    
-    void countListHits(const BED &a, int index, bool forceStrand);
     
     // the bedfile with which this instance is associated
     string bedFile;
@@ -387,10 +238,7 @@ public:
                            // 9 for GFF
     
     // Main data structires used by BEDTools
-    masterBedCovMap      bedCovMap;
-    masterBedCovListMap  bedCovListMap;
     masterBedMap         bedMap;
-    masterBedMapNoBin    bedMapNoBin;
                         
 private:
     
@@ -400,6 +248,7 @@ private:
     bool _typeIsKnown;        // do we know the type?   (i.e., BED, GFF, VCF)
     FileType   _fileType;     // what is the file type? (BED? GFF? VCF?)    
     istream   *_bedStream;
+    unsigned int _lineNum;
 
     void setGff (bool isGff);
     void setVcf (bool isVcf);
@@ -415,7 +264,7 @@ private:
         parseLine: converts a lineVector into either BED or BEDCOV (templated, hence in header to avoid linker issues.)
     */
     template <typename T>
-    inline BedLineStatus parseLine (T &bed, const vector<string> &lineVector, int &lineNum) {
+    inline BedLineStatus parseLine (T &bed, const vector<string> &lineVector) {
 
         //char *p2End, *p3End, *p4End, *p5End;
         //long l2, l3, l4, l5;
@@ -433,11 +282,11 @@ private:
                 if (_typeIsKnown == true) {
                     switch(_fileType) {
                         case BED_FILETYPE:
-                            if (parseBedLine(bed, lineVector, lineNum, numFields) == true) return BED_VALID;
+                            if (parseBedLine(bed, lineVector, numFields) == true) return BED_VALID;
                         case VCF_FILETYPE:
-                            if (parseVcfLine(bed, lineVector, lineNum, numFields) == true) return BED_VALID;
+                            if (parseVcfLine(bed, lineVector, numFields) == true) return BED_VALID;
                         case GFF_FILETYPE:
-                            if (parseGffLine(bed, lineVector, lineNum, numFields) == true) return BED_VALID;
+                            if (parseGffLine(bed, lineVector, numFields) == true) return BED_VALID;
                         default:
                             printf("ERROR: file type encountered. Exiting\n");
                             exit(1);
@@ -450,7 +299,7 @@ private:
                         setGff(false);    
                         setFileType(BED_FILETYPE);
                         setBedType(numFields);       // we now expect numFields columns in each line
-                        if (parseBedLine(bed, lineVector, lineNum, numFields) == true) return BED_VALID;
+                        if (parseBedLine(bed, lineVector, numFields) == true) return BED_VALID;
                     }
                     // it's VCF, assuming the second column is numeric and there are at least 8 fields.
                     else if (isInteger(lineVector[1]) && numFields >= 8) {    
@@ -458,29 +307,29 @@ private:
                         setVcf(true);
                         setFileType(VCF_FILETYPE);
                         setBedType(numFields);       // we now expect numFields columns in each line
-                        if (parseVcfLine(bed, lineVector, lineNum, numFields) == true) return BED_VALID;
+                        if (parseVcfLine(bed, lineVector, numFields) == true) return BED_VALID;
                     }
                     // it's GFF, assuming columns columns 4 and 5 are numeric and we have 9 fields total.
                     else if ((numFields == 9) && isInteger(lineVector[3]) && isInteger(lineVector[4])) {
                         setGff(true);
                         setFileType(GFF_FILETYPE);
                         setBedType(numFields);       // we now expect numFields columns in each line
-                        if (parseGffLine(bed, lineVector, lineNum, numFields) == true) return BED_VALID;
+                        if (parseGffLine(bed, lineVector, numFields) == true) return BED_VALID;
                     }
                     else {
                         cerr << "Unexpected file format.  Please use tab-delimited BED, GFF, or VCF. " << 
-                                "Perhaps you have non-integer starts or ends at line " << lineNum << "?" << endl;
+                                "Perhaps you have non-integer starts or ends at line " << _lineNum << "?" << endl;
                         exit(1);
                     }
                 }
             }
             else {
-                cerr << "It looks as though you have less than 3 columns at line: " << lineNum << ".  Are you sure your files are tab-delimited?" << endl;
+                cerr << "It looks as though you have less than 3 columns at line: " << _lineNum << ".  Are you sure your files are tab-delimited?" << endl;
                 exit(1);
             }
         }
         else {
-            lineNum--;
+            _lineNum--;
             return BED_HEADER;  
         }
         // default
@@ -492,7 +341,7 @@ private:
         parseBedLine: converts a lineVector into either BED or BEDCOV (templated, hence in header to avoid linker issues.)
     */
     template <typename T>
-    inline bool parseBedLine (T &bed, const vector<string> &lineVector, int lineNum, unsigned int numFields) {
+    inline bool parseBedLine (T &bed, const vector<string> &lineVector, unsigned int numFields) {
 
         // process as long as the number of fields in this 
         // line matches what we expect for this file.
@@ -522,7 +371,7 @@ private:
                 }
             }
             else if (this->bedType != 3) {
-                cerr << "Error: unexpected number of fields at line: " << lineNum 
+                cerr << "Error: unexpected number of fields at line: " << _lineNum 
                      << ".  Verify that your files are TAB-delimited.  Exiting..." << endl; 
                 exit(1);
             }
@@ -532,24 +381,24 @@ private:
                 return true;
             }
             else if (bed.start > bed.end) {
-                cerr << "Error: malformed BED entry at line " << lineNum << ". Start was greater than end. Exiting." << endl; 
+                cerr << "Error: malformed BED entry at line " << _lineNum << ". Start was greater than end. Exiting." << endl; 
                 exit(1);
             }
             else if ( (bed.start < 0) || (bed.end < 0) ) {
-                cerr << "Error: malformed BED entry at line " << lineNum << ". Coordinate detected that is < 0. Exiting." << endl;
+                cerr << "Error: malformed BED entry at line " << _lineNum << ". Coordinate detected that is < 0. Exiting." << endl;
                 exit(1);
             }
         }
         else if (numFields == 1) {
-            cerr << "Only one BED field detected: " << lineNum << ".  Verify that your files are TAB-delimited.  Exiting..." << endl;
+            cerr << "Only one BED field detected: " << _lineNum << ".  Verify that your files are TAB-delimited.  Exiting..." << endl;
             exit(1);        
         }
         else if ((numFields != this->bedType) && (numFields != 0)) {
-            cerr << "Differing number of BED fields encountered at line: " << lineNum << ".  Exiting..." << endl;
+            cerr << "Differing number of BED fields encountered at line: " << _lineNum << ".  Exiting..." << endl;
             exit(1);
         }
         else if ((numFields < 3) && (numFields != 0)) {
-            cerr << "TAB delimited BED file with at least 3 fields (chrom, start, end) is required at line: "<< lineNum << ".  Exiting..." << endl;
+            cerr << "TAB delimited BED file with at least 3 fields (chrom, start, end) is required at line: "<< _lineNum << ".  Exiting..." << endl;
             exit(1);
         }
         return false;
@@ -560,7 +409,7 @@ private:
         parseVcfLine: converts a lineVector into either BED or BEDCOV (templated, hence in header to avoid linker issues.)
     */
     template <typename T>
-    inline bool parseVcfLine (T &bed, const vector<string> &lineVector, int lineNum, unsigned int numFields) {
+    inline bool parseVcfLine (T &bed, const vector<string> &lineVector, unsigned int numFields) {
         if (numFields == this->bedType) { 
             bed.chrom  = lineVector[0];
             bed.start  = atoi(lineVector[1].c_str()) - 1;  // VCF is one-based
@@ -582,24 +431,24 @@ private:
                 return true;
             }
             else if (bed.start > bed.end) {
-                cerr << "Error: malformed VCF entry at line " << lineNum << ". Start was greater than end. Exiting." << endl;
+                cerr << "Error: malformed VCF entry at line " << _lineNum << ". Start was greater than end. Exiting." << endl;
                 exit(1);
             }
             else if ( (bed.start < 0) || (bed.end < 0) ) {
-                cerr << "Error: malformed VCF entry at line " << lineNum << ". Coordinate detected that is < 0. Exiting." << endl;
+                cerr << "Error: malformed VCF entry at line " << _lineNum << ". Coordinate detected that is < 0. Exiting." << endl;
                 exit(1);
             }
         }
         else if (numFields == 1) {
-            cerr << "Only one VCF field detected: " << lineNum << ".  Verify that your files are TAB-delimited.  Exiting..." << endl;
+            cerr << "Only one VCF field detected: " << _lineNum << ".  Verify that your files are TAB-delimited.  Exiting..." << endl;
             exit(1);        
         }
         else if ((numFields != this->bedType) && (numFields != 0)) {
-            cerr << "Differing number of VCF fields encountered at line: " << lineNum << ".  Exiting..." << endl;
+            cerr << "Differing number of VCF fields encountered at line: " << _lineNum << ".  Exiting..." << endl;
             exit(1);
         }
         else if ((numFields < 2) && (numFields != 0)) {
-            cerr << "TAB delimited VCF file with at least 2 fields (chrom, pos) is required at line: "<< lineNum << ".  Exiting..." << endl;
+            cerr << "TAB delimited VCF file with at least 2 fields (chrom, pos) is required at line: "<< _lineNum << ".  Exiting..." << endl;
             exit(1);
         }
         return false;
@@ -611,7 +460,7 @@ private:
         parseGffLine: converts a lineVector into either BED or BEDCOV (templated, hence in header to avoid linker issues.)
     */
     template <typename T>
-    inline bool parseGffLine (T &bed, const vector<string> &lineVector, int lineNum, unsigned int numFields) {
+    inline bool parseGffLine (T &bed, const vector<string> &lineVector, unsigned int numFields) {
         if (numFields == this->bedType) { 
             if (this->bedType == 9 && _isGff) {
                 bed.chrom = lineVector[0];
@@ -626,30 +475,30 @@ private:
                 bed.otherFields.push_back(lineVector[8]);  // add GFF "group". unused in BED
             }
             else {
-                cerr << "Error: unexpected number of fields at line: " << lineNum << 
+                cerr << "Error: unexpected number of fields at line: " << _lineNum << 
                         ".  Verify that your files are TAB-delimited and that your GFF file has 9 fields.  Exiting..." << endl;
                 exit(1);
             }
             if (bed.start > bed.end) {
-                cerr << "Error: malformed GFF entry at line " << lineNum << ". Start was greater than end. Exiting." << endl;
+                cerr << "Error: malformed GFF entry at line " << _lineNum << ". Start was greater than end. Exiting." << endl;
                 exit(1);
             }
             else if ( (bed.start < 0) || (bed.end < 0) ) {
-                cerr << "Error: malformed GFF entry at line " << lineNum << ". Coordinate detected that is < 1. Exiting." << endl;
+                cerr << "Error: malformed GFF entry at line " << _lineNum << ". Coordinate detected that is < 1. Exiting." << endl;
                 exit(1);
             }
             else return true;
         }
         else if (numFields == 1) {
-            cerr << "Only one GFF field detected: " << lineNum << ".  Verify that your files are TAB-delimited.  Exiting..." << endl;
+            cerr << "Only one GFF field detected: " << _lineNum << ".  Verify that your files are TAB-delimited.  Exiting..." << endl;
             exit(1);        
         }
         else if ((numFields != this->bedType) && (numFields != 0)) {
-            cerr << "Differing number of GFF fields encountered at line: " << lineNum << ".  Exiting..." << endl;
+            cerr << "Differing number of GFF fields encountered at line: " << _lineNum << ".  Exiting..." << endl;
             exit(1);
         }
         else if ((numFields < 9) && (numFields != 0)) {
-            cerr << "TAB delimited GFF file with 9 fields is required at line: "<< lineNum << ".  Exiting..." << endl;
+            cerr << "TAB delimited GFF file with 9 fields is required at line: "<< _lineNum << ".  Exiting..." << endl;
             exit(1);
         }
         return false;

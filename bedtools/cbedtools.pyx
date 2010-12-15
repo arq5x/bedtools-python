@@ -35,7 +35,7 @@ cdef class Bed:
     @property
     def other(self):
         return string_vec2list(self._bed.otherFields)
-            
+        
     def __repr__(self):
         return "Bed(%s:%i..%i)" % (self._bed.chrom.c_str(), self._bed.start, self._bed.end)
 
@@ -65,17 +65,38 @@ cdef list bed_vec2list(vector[BED] bv):
 
 cdef class IntervalFile:
     cdef BedFile *intervalFile_ptr
-
+    cdef bint _loaded
+    cdef bint _open
+    
     def __init__(self, intervalFile):
         self.intervalFile_ptr = new BedFile(string(intervalFile))
-
-    def loadIntoMap(self):
-        self.intervalFile_ptr.loadBedFileIntoMap()
-
+        self._loaded = 0
+        self._open   = 0
+    
     def __dealloc__(self):
         del self.intervalFile_ptr
 
-    def findOverlaps(self, chrom, int start, int end, strand = None, float overlapFraction = 0.0):
+    def __iter__(self):
+        return self
+        
+    def __next__(self):
+        if self._open:
+            pass
+        else:
+            self.intervalFile_ptr.Open()
+            self._open = 1
+        cdef BED b = self.intervalFile_ptr.GetNextBed()
+        if b.status == BED_VALID:
+            return create_bed(b)
+        elif b.status == BED_INVALID:
+            raise StopIteration
+        else:
+            return self.next()
+        
+    def loadIntoMap(self):
+        self.intervalFile_ptr.loadBedFileIntoMap()
+            
+    def search(self, chrom, int start, int end, strand = None, float overlapFraction = 0.0):
         """
         If strand is not passed (or passed as None), hits will be reported without regard to strand.
         If strand is passed, hits will only be reported if on the same strand.
@@ -99,6 +120,12 @@ cdef class IntervalFile:
         """
         cdef vector[BED] vec_b
         
+        if self._loaded:
+            pass
+        else:
+            self.loadIntoMap()
+            self._loaded = 1
+        
         if strand is None:
             vec_b = self.intervalFile_ptr.FindOverlapsPerBin(string(chrom), start, end, overlapFraction)
             try:
@@ -110,4 +137,4 @@ cdef class IntervalFile:
             try:
                 return bed_vec2list(vec_b)
             finally:
-                pass  
+                pass

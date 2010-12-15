@@ -29,7 +29,8 @@ cdef extern from "bedFile.h":
         string score
         string strand
         vector[string] otherFields
-        vector[BED] overlaps
+        BedLineStatus status
+        
         BED()
         BED(string chrom, CHRPOS start, CHRPOS end, string name,
              string score, string strand, vector[string] otherFields)
@@ -39,7 +40,7 @@ cdef extern from "bedFile.h":
         BedFile(string)
         void Open()
         void Close()
-        BedLineStatus GetNextBed(BED &bed, int &lineNum)
+        BED GetNextBed()
         void loadBedFileIntoMap()
 
         # this version doesn't care if the strands match.
