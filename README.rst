@@ -32,6 +32,7 @@ bedtools-python
 
 	>>> snps = IntervalFile("testData/snps.hg18.chr21.bed")
 	>>> rmsk = IntervalFile("testData/rmsk.hg18.chr21.bed")
+	>>>
 	>>> # find snps that overlap with repeat annotations
 	>>> for a in snps:
 	>>>     for hit in rmsk.search(a.chrom, a.start, a.end):
