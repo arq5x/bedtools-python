@@ -52,8 +52,8 @@ Still need to document this.
     >>>     # retrieve repeats that overlap this exon
     >>>     for hit in rmsk.search(ex.chrom, ex.start, ex.end):
     >>>         # report the _full_ features that overlap
-    >>>         print ex.chrom,  ex.start,  ex.end,  ex.name,\
-    >>>               hit.chrom, hit.start, hit.end, hit.name,
+    >>>         print ex.chrom,  ex.start,  ex.end,\
+    >>>               hit.chrom, hit.start, hit.end,
     >>>         # extract the coordinates of the overlap, 
     >>>         # as well as the amount of overlap in b.p.
     >>>         o = Overlap(ex.start, ex.end, hit.start, hit.end)
@@ -61,11 +61,11 @@ Still need to document this.
     >>>               " overlap_end="  + str(o.overlap_end),\
     >>>               " overlap_amt="  + str(o.overlap_amt)
 
-	chr21 10119416 10119517 uc002yit.1_exon_8_0_chr21_10119417_r chr21 10119432 10119526 REP522 overlap_start=10119432  overlap_end=10119517  overlap_amt=85
-	chr21 10120573 10120796 uc002yit.1_exon_9_0_chr21_10120574_r chr21 10119986 10121803 REP522 overlap_start=10120573  overlap_end=10120796  overlap_amt=223
-	chr21 10119416 10119517 uc002yiu.1_exon_7_0_chr21_10119417_r chr21 10119432 10119526 REP522 overlap_start=10119432  overlap_end=10119517  overlap_amt=85
-	chr21 10120593 10120808 uc002yiu.1_exon_8_0_chr21_10120594_r chr21 10119986 10121803 REP522 overlap_start=10120593  overlap_end=10120808  overlap_amt=215
-	chr21 10081596 10081687 uc002yiv.1_exon_1_0_chr21_10081597_r chr21 10081575 10081768 AluY overlap_start=10081596  overlap_end=10081687  overlap_amt=91
+	chr21 10119416 10119517 chr21 10119432 10119526 overlap_start=10119432  overlap_end=10119517  overlap_amt=85
+	chr21 10120573 10120796 chr21 10119986 10121803 overlap_start=10120573  overlap_end=10120796  overlap_amt=223
+	chr21 10119416 10119517 chr21 10119432 10119526 overlap_start=10119432  overlap_end=10119517  overlap_amt=85
+	chr21 10120593 10120808 chr21 10119986 10121803 overlap_start=10120593  overlap_end=10120808  overlap_amt=215
+	chr21 10081596 10081687 chr21 10081575 10081768 overlap_start=10081596  overlap_end=10081687  overlap_amt=91
 	
 	
 	

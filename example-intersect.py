@@ -15,8 +15,8 @@ def main():
         # retrieve repeats that overlap this exon
         for hit in rmsk.search(ex.chrom, ex.start, ex.end):
             # report the _full_ features that overlap
-            print ex.chrom,  ex.start,  ex.end,  ex.name,\
-                  hit.chrom, hit.start, hit.end, hit.name,
+            print ex.chrom,  ex.start,  ex.end,\
+                  hit.chrom, hit.start, hit.end,
             # extract the coordinates of the overlap, 
             # as well as the amount of overlap in b.p.
             o = Overlap(ex.start, ex.end, hit.start, hit.end)
