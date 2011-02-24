@@ -47,6 +47,40 @@ cdef Bed create_bed(BED b):
     pyb._bed = new BED(b.chrom, b.start, b.end, b.name, b.score, b.strand, b.otherFields)
     return pyb
 
+
+cdef class Overlap:
+    cdef int s1
+    cdef int e1
+    cdef int s2
+    cdef int e2
+    
+    def __init__(self, s1, e1, s2, e2):
+        self.s1              = s1
+        self.e1              = e1
+        self.s2              = s2
+        self.e2              = e2
+
+    cdef inline int max(self, int a, int b):
+        if a >= b: return a
+        else: return b
+
+    cdef inline int min(self, int a, int b):
+        if a <= b: return a
+        else: return b
+
+    @property
+    def overlap_start(self):
+        return max(self.s1,self.s2)
+
+    @property
+    def overlap_end(self):
+        return min(self.e1,self.e2)
+
+    @property
+    def overlap_amt(self):
+        return  min(self.e1,self.e2) - max(self.s1,self.s2)
+
+
 cdef list string_vec2list(vector[string] sv):
     cdef size_t size = sv.size(), i
     cdef list l = []
@@ -62,6 +96,9 @@ cdef list bed_vec2list(vector[BED] bv):
         b = bv.at(i)
         l.append(create_bed(b))
     return l
+
+
+     
 
 cdef class IntervalFile:
     cdef BedFile *intervalFile_ptr
@@ -138,3 +175,4 @@ cdef class IntervalFile:
                 return bed_vec2list(vec_b)
             finally:
                 pass
+                

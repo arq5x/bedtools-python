@@ -14,6 +14,7 @@ bedtools-python
   1. Cython
 	- sudo easy_install cython
   2. GNU compiler
+  3. zlib
 
 ----------------
 2. Installation
@@ -29,8 +30,7 @@ bedtools-python
 ----------------
 3. The API
 ----------------
-
-	*The IntervalFile class.*
+Still need to document this.
 
 ---------------
 4. Examples
@@ -40,17 +40,35 @@ bedtools-python
 
 ::
 
-	>>> snps = IntervalFile("testData/snps.hg18.chr21.bed")
-	>>> rmsk = IntervalFile("testData/rmsk.hg18.chr21.bed")
-	>>>
-	>>> # find snps that overlap with repeat annotations
-	>>> for a in snps:
-	>>>     for hit in rmsk.search(a.chrom, a.start, a.end):
-	>>>        print a.chrom, a.start, a.end, a.name,
-	>>>        print hit.chrom, hit.start, hit.end, hit.name
-	chr21 9719803 9719804 rs55981545 chr21 9719768 9721892 ALR/Alpha
-	chr21 9719863 9719864 rs73327798 chr21 9719768 9721892 ALR/Alpha
-	chr21 9719950 9719951 rs73327799 chr21 9719768 9721892 ALR/Alpha
-	chr21 9719972 9719973 rs71245703 chr21 9719768 9721892 ALR/Alpha
-	chr21 9719980 9719981 rs28971396 chr21 9719768 9721892 ALR/Alpha
+	>>> from bedtools import IntervalFile, Overlap
+    >>> 
+	>>> def main():
+    >>> 
+    >>> exons = IntervalFile("bedtools/tests/data/exons.hg18.chr21.bed")
+    >>> rmsk  = IntervalFile("bedtools/tests/data/rmsk.hg18.chr21.bed")
+    >>> 
+    >>> # find exons that overlap with repeat annotations
+    >>> for ex in exons:
+    >>>     # retrieve repeats that overlap this exon
+    >>>     for hit in rmsk.search(ex.chrom, ex.start, ex.end):
+    >>>         # report the _full_ features that overlap
+    >>>         print ex.chrom,  ex.start,  ex.end,  ex.name,\
+    >>>               hit.chrom, hit.start, hit.end, hit.name,
+    >>>         # extract the coordinates of the overlap, 
+    >>>         # as well as the amount of overlap in b.p.
+    >>>         o = Overlap(ex.start, ex.end, hit.start, hit.end)
+    >>>         print "overlap_start=" + str(o.overlap_start),\
+    >>>               " overlap_end="  + str(o.overlap_end),\
+    >>>               " overlap_amt="  + str(o.overlap_amt)
+
+	chr21 10119416 10119517 uc002yit.1_exon_8_0_chr21_10119417_r chr21 10119432 10119526 REP522 overlap_start=10119432  overlap_end=10119517  overlap_amt=85
+	chr21 10120573 10120796 uc002yit.1_exon_9_0_chr21_10120574_r chr21 10119986 10121803 REP522 overlap_start=10120573  overlap_end=10120796  overlap_amt=223
+	chr21 10119416 10119517 uc002yiu.1_exon_7_0_chr21_10119417_r chr21 10119432 10119526 REP522 overlap_start=10119432  overlap_end=10119517  overlap_amt=85
+	chr21 10120593 10120808 uc002yiu.1_exon_8_0_chr21_10120594_r chr21 10119986 10121803 REP522 overlap_start=10120593  overlap_end=10120808  overlap_amt=215
+	chr21 10081596 10081687 uc002yiv.1_exon_1_0_chr21_10081597_r chr21 10081575 10081768 AluY overlap_start=10081596  overlap_end=10081687  overlap_amt=91
+	
+	
+	
+	
+	
 	...
