@@ -12,7 +12,7 @@ bedtools-python
 1. Requirements
 ---------------
   1. Cython
-	- sudo easy_install cython
+    - sudo easy_install cython
   2. GNU compiler
   3. zlib
 
@@ -22,10 +22,10 @@ bedtools-python
 
 ::
 
-	python setup.py install
-	./test.sh
-	# Try it out
-	./example-intersect.py
+    python setup.py install
+    ./test.sh
+    # Try it out
+    ./example-intersect.py
 
 ----------------
 3. The API
@@ -40,9 +40,9 @@ Still need to document this.
 
 ::
 
-	>>> from bedtools import IntervalFile, Overlap
+    >>> from bedtools import IntervalFile, Overlap
     >>> 
-	>>> def main():
+    >>> def main():
     >>> 
     >>> exons = IntervalFile("bedtools/tests/data/exons.hg18.chr21.bed")
     >>> rmsk  = IntervalFile("bedtools/tests/data/rmsk.hg18.chr21.bed")
@@ -61,14 +61,14 @@ Still need to document this.
     >>>               " overlap_end="  + str(o.overlap_end),\
     >>>               " overlap_amt="  + str(o.overlap_amt)
 
-	chr21 10119416 10119517 chr21 10119432 10119526 overlap_start=10119432  overlap_end=10119517  overlap_amt=85
-	chr21 10120573 10120796 chr21 10119986 10121803 overlap_start=10120573  overlap_end=10120796  overlap_amt=223
-	chr21 10119416 10119517 chr21 10119432 10119526 overlap_start=10119432  overlap_end=10119517  overlap_amt=85
-	chr21 10120593 10120808 chr21 10119986 10121803 overlap_start=10120593  overlap_end=10120808  overlap_amt=215
-	chr21 10081596 10081687 chr21 10081575 10081768 overlap_start=10081596  overlap_end=10081687  overlap_amt=91
-	
-	
-	
-	
-	
-	...
+    chr21 10119416 10119517 chr21 10119432 10119526 overlap_start=10119432  overlap_end=10119517  overlap_amt=85
+    chr21 10120573 10120796 chr21 10119986 10121803 overlap_start=10120573  overlap_end=10120796  overlap_amt=223
+    chr21 10119416 10119517 chr21 10119432 10119526 overlap_start=10119432  overlap_end=10119517  overlap_amt=85
+    chr21 10120593 10120808 chr21 10119986 10121803 overlap_start=10120593  overlap_end=10120808  overlap_amt=215
+    chr21 10081596 10081687 chr21 10081575 10081768 overlap_start=10081596  overlap_end=10081687  overlap_amt=91
+    
+    
+    
+    
+    
+    ...
