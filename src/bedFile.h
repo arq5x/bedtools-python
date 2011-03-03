@@ -129,6 +129,11 @@ struct BED {
     string name;
     string score;
     string strand;
+    
+    // Coordinates of an overlao
+    CHRPOS o_start;
+    CHRPOS o_end;
+    int    o_amt;
 
     // Add'l fields for BED12 and/or custom BED annotations
     vector<string> otherFields;
@@ -147,6 +152,9 @@ public:
       name(""),
       score(""),
       strand(""),
+      o_start(0),
+      o_end(0),
+      o_amt(0),
       otherFields(),
       status()
     {}
@@ -155,7 +163,15 @@ public:
     BED(string chrom, CHRPOS start, CHRPOS end) 
     : chrom(chrom), 
       start(start),
-      end(end)
+      end(end),
+      name(""),
+      score(""),
+      strand(""),
+      o_start(0),
+      o_end(0),
+      o_amt(0),
+      otherFields(),
+      status()
     {}
 
     // BED4
@@ -163,7 +179,14 @@ public:
     : chrom(chrom), 
       start(start),
       end(end),
-      strand(strand)
+      name(""),
+      score(""),
+      strand(strand),
+      o_start(0),
+      o_end(0),
+      o_amt(0),
+      otherFields(),
+      status()
     {}
 
     // BED6
@@ -174,7 +197,12 @@ public:
       end(end),
       name(name),
       score(score),
-      strand(strand)
+      strand(strand),
+      o_start(0),
+      o_end(0),
+      o_amt(0),      
+      otherFields(),
+      status()
     {}
     
     // BEDALL
@@ -186,7 +214,28 @@ public:
       name(name),
       score(score),
       strand(strand),
-      otherFields(otherFields)
+      o_start(0),
+      o_end(0),
+      o_amt(0),
+      otherFields(otherFields),
+      status()
+    {}
+    
+    // BEDALL + overlap
+    BED(string chrom, CHRPOS start, CHRPOS end, string name, 
+        string score, string strand, vector<string> otherFields,
+        CHRPOS o_start, CHRPOS o_end, CHRPOS o_amt) 
+    : chrom(chrom), 
+      start(start),
+      end(end),
+      name(name),
+      score(score),
+      strand(strand),
+      o_start(o_start),
+      o_end(o_end),
+      o_amt(o_amt),
+      otherFields(otherFields),
+      status()
     {}
     
 }; // BED
@@ -228,9 +277,18 @@ public:
     // Given a chrom, start, end and strand for a single feature,
     // search for all overlapping features in another BED file.
     // Searches through each relevant genome bin on the same chromosome
-    // as the single feature. Note: Adapted from kent source "binKeeperFind"
-    vector<BED> FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, float overlapFraction = 0.0);                // ignores strand
-    vector<BED> FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, string strand, float overlapFraction = 0.0); // enforces same strand
+    
+    // return all overlaps
+    vector<BED> FindOverlapsPerBin(BED &bed, float overlapFraction = 0.0);                           // ignores strand
+    vector<BED> FindOverlapsPerBin(BED &bed, bool forceStrand = false, float overlapFraction = 0.0); // enforces same strand
+
+    // return T/F whether or not >=1 overlap exists
+    int FindAnyOverlapsPerBin(BED &bed, float overlapFraction = 0.0);                           // ignores strand
+    int FindAnyOverlapsPerBin(BED &bed, bool forceStrand = false, float overlapFraction = 0.0); // enforces same strand
+
+    // return the number of overlaps found
+    int CountOverlapsPerBin(BED &bed, float overlapFraction = 0.0);                           // ignores strand
+    int CountOverlapsPerBin(BED &bed, bool forceStrand = false, float overlapFraction = 0.0); // enforces same strand
     
     // the bedfile with which this instance is associated
     string bedFile;

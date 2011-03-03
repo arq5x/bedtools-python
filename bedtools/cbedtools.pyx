@@ -1,17 +1,23 @@
 """
     bedtools.pyx: A Cython wrapper for the BEDTools BedFile class
     
-    Author: Aaron Quinlan
-    Affl:   Center for Public Health Genomics
-            University of Virginia
+    Authors: Aaron Quinlan[1], Brent Pedersen[2]
+    Affl:    [1] Center for Public Health Genomics, University of Virginia
+             [2] 
     Email:  aaronquinlan at gmail dot com
 """
 include "cbedtools.pxi"
 from cython.operator cimport dereference as deref
 
-cdef class Bed:
+cdef class Interval:
     cdef BED *_bed
-              
+    
+    def __init__(self, chrom, start, end, strand = None):
+        if strand is None:
+            self._bed = new BED(string(chrom), start, end)
+        else:
+            self._bed = new BED(string(chrom), start, end, string(strand))
+            
     @property
     def chrom(self):
         return self._bed.chrom.c_str()
@@ -35,50 +41,30 @@ cdef class Bed:
     @property
     def other(self):
         return string_vec2list(self._bed.otherFields)
-        
+
+    @property
+    def o_start(self):
+        return self._bed.o_start
+
+    @property
+    def o_end(self):
+        return self._bed.o_end
+
+    @property
+    def o_amt(self):
+        return self._bed.o_amt
+
     def __repr__(self):
-        return "Bed(%s:%i..%i)" % (self._bed.chrom.c_str(), self._bed.start, self._bed.end)
+        return "Interval(%s:%i..%i)" % (self._bed.chrom.c_str(), self._bed.start, self._bed.end)
 
     def __dealloc__(self):
         del self._bed
 
-cdef Bed create_bed(BED b):
-    cdef Bed pyb = Bed.__new__(Bed)
-    pyb._bed = new BED(b.chrom, b.start, b.end, b.name, b.score, b.strand, b.otherFields)
+
+cdef Interval create_interval(BED b):
+    cdef Interval pyb = Interval.__new__(Interval)
+    pyb._bed = new BED(b.chrom, b.start, b.end, b.name, b.score, b.strand, b.otherFields, b.o_start, b.o_end, b.o_amt)
     return pyb
-
-
-cdef class Overlap:
-    cdef int s1
-    cdef int e1
-    cdef int s2
-    cdef int e2
-    
-    def __init__(self, s1, e1, s2, e2):
-        self.s1              = s1
-        self.e1              = e1
-        self.s2              = s2
-        self.e2              = e2
-
-    cdef inline int max(self, int a, int b):
-        if a >= b: return a
-        else: return b
-
-    cdef inline int min(self, int a, int b):
-        if a <= b: return a
-        else: return b
-
-    @property
-    def overlap_start(self):
-        return max(self.s1,self.s2)
-
-    @property
-    def overlap_end(self):
-        return min(self.e1,self.e2)
-
-    @property
-    def overlap_amt(self):
-        return  min(self.e1,self.e2) - max(self.s1,self.s2)
 
 
 cdef list string_vec2list(vector[string] sv):
@@ -94,11 +80,9 @@ cdef list bed_vec2list(vector[BED] bv):
     cdef BED b
     for i in range(size):
         b = bv.at(i)
-        l.append(create_bed(b))
+        l.append(create_interval(b))
     return l
 
-
-     
 
 cdef class IntervalFile:
     cdef BedFile *intervalFile_ptr
@@ -124,36 +108,20 @@ cdef class IntervalFile:
             self._open = 1
         cdef BED b = self.intervalFile_ptr.GetNextBed()
         if b.status == BED_VALID:
-            return create_bed(b)
+            return create_interval(b)
         elif b.status == BED_INVALID:
             raise StopIteration
         else:
             return self.next()
         
+
     def loadIntoMap(self):
         self.intervalFile_ptr.loadBedFileIntoMap()
+
             
-    def search(self, chrom, int start, int end, strand = None, float overlapFraction = 0.0):
+    def all_hits(self, Interval interval, bool same_strand = False, float ovlp_pct = 0.0):
         """
-        If strand is not passed (or passed as None), hits will be reported without regard to strand.
-        If strand is passed, hits will only be reported if on the same strand.
-        
-        The overlapFraction defaults to 0.0 so that even 1bp of overlap is sufficient.
-        If overlapFraction is passed, this fraction of the passed BED feature must be "covered."
-        
-        Examples:
-        1. Find all overlaps regardless of degree on either strand
-        hits = findOverlaps("chr1", 10, 20)
-
-        2. Find all overlaps regardless of degree on positive strand
-        hits = findOverlaps("chr1", 10, 20, "+")
-
-        3. Find all overlaps covering at least half of this feature on either strand
-        hits = findOverlaps("chr1", 10, 20, None, 0.5)
-                
-        4. Find all overlaps covering at least half of this feature on negative strand
-        hits = findOverlaps("chr1", 10, 20, "-", 0.5)
-        
+        Search for the "bed" feature in this file and ***return all overlaps***
         """
         cdef vector[BED] vec_b
         
@@ -163,16 +131,53 @@ cdef class IntervalFile:
             self.loadIntoMap()
             self._loaded = 1
         
-        if strand is None:
-            vec_b = self.intervalFile_ptr.FindOverlapsPerBin(string(chrom), start, end, overlapFraction)
+        if same_strand == False:
+            vec_b = self.intervalFile_ptr.FindOverlapsPerBin(deref(interval._bed), ovlp_pct)
             try:
                 return bed_vec2list(vec_b)
             finally:
                 pass
         else:
-            vec_b = self.intervalFile_ptr.FindOverlapsPerBin(string(chrom), start, end, string(strand), overlapFraction)
+            vec_b = self.intervalFile_ptr.FindOverlapsPerBin(deref(interval._bed), same_strand, ovlp_pct)
             try:
                 return bed_vec2list(vec_b)
             finally:
                 pass
-                
+
+
+    def any_hits(self, Interval interval, bool same_strand = False, float ovlp_pct = 0.0):
+        """
+        Search for the "bed" feature in this file and return 
+        whether (True/False) >= 1 overlaps are found.
+        """
+        found = 0
+
+        if self._loaded:
+            pass
+        else:
+            self.loadIntoMap()
+            self._loaded = 1
+
+        if same_strand == False:
+            found = self.intervalFile_ptr.FindAnyOverlapsPerBin(deref(interval._bed), ovlp_pct)
+        else:
+            found = self.intervalFile_ptr.FindAnyOverlapsPerBin(deref(interval._bed), same_strand, ovlp_pct) 
+
+        return found
+
+        
+    def count_hits(self, Interval interval, bool same_strand = False, float ovlp_pct = 0.0):
+        """
+        Search for the "bed" feature in this file and return the *** count of hits found ***
+        """
+        if self._loaded:
+            pass
+        else:
+            self.loadIntoMap()
+            self._loaded = 1
+
+        if same_strand == False:
+           return self.intervalFile_ptr.CountOverlapsPerBin(deref(interval._bed), ovlp_pct)
+        else:
+           return self.intervalFile_ptr.CountOverlapsPerBin(deref(interval._bed), same_strand, ovlp_pct)
+           

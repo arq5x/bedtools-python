@@ -2,7 +2,7 @@
 
 import unittest
 import os
-from bedtools import IntervalFile
+from bedtools import Interval, IntervalFile
 PATH = os.path.dirname(__file__)
 
 class IntervalFileTest(unittest.TestCase):
@@ -12,17 +12,21 @@ class IntervalFileTest(unittest.TestCase):
         self.bed = IntervalFile(self.file)
 
     def testOverlaps(self):
-        hits = self.bed.search("chr21", 9719768, 9739768)
+        i    = Interval("chr21", 9719768, 9739768)
+        hits = self.bed.all_hits(i)
         print len(hits)
         self.assertEqual(len(hits), 8)
         for hit in hits:
             self.assert_(hit.start <= 9739768 and hit.end >= 9719768)
 
     def testStrands(self):
-        hits = self.bed.search("chr21", 9719768, 9739768, "+")
+        i = Interval("chr21", 9719768, 9739768, "+")
+        hits = self.bed.all_hits(i, same_strand=True)
         for hit in hits:
             self.assert_(hit.strand == '+')
-        hits = self.bed.search("chr21", 9719768, 9739768, "-")
+
+        i = Interval("chr21", 9719768, 9739768, "-")
+        hits = self.bed.all_hits(i, same_strand=True)
         for hit in hits:
             self.assert_(hit.strand == '-')
 
