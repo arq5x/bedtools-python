@@ -105,9 +105,7 @@ cdef class IntervalFile:
         return self
         
     def __next__(self):
-        if self._open:
-            pass
-        else:
+        if not self._open:
             self.intervalFile_ptr.Open()
             self._open = 1
         cdef BED b = self.intervalFile_ptr.GetNextBed()
@@ -120,7 +118,9 @@ cdef class IntervalFile:
         
 
     def loadIntoMap(self):
+        if self._loaded: return
         self.intervalFile_ptr.loadBedFileIntoMap()
+        self._loaded = 1
 
             
     def all_hits(self, Interval interval, bool same_strand = False, float ovlp_pct = 0.0):
@@ -128,12 +128,7 @@ cdef class IntervalFile:
         Search for the "bed" feature in this file and ***return all overlaps***
         """
         cdef vector[BED] vec_b
-        
-        if self._loaded:
-            pass
-        else:
-            self.loadIntoMap()
-            self._loaded = 1
+        self.loadIntoMap()
         
         if same_strand == False:
             vec_b = self.intervalFile_ptr.FindOverlapsPerBin(deref(interval._bed), ovlp_pct)
@@ -156,12 +151,7 @@ cdef class IntervalFile:
         whether (True/False) >= 1 overlaps are found.
         """
         found = 0
-
-        if self._loaded:
-            pass
-        else:
-            self.loadIntoMap()
-            self._loaded = 1
+        self.loadIntoMap()
 
         if same_strand == False:
             found = self.intervalFile_ptr.FindAnyOverlapsPerBin(deref(interval._bed), ovlp_pct)
@@ -175,11 +165,7 @@ cdef class IntervalFile:
         """
         Search for the "bed" feature in this file and return the *** count of hits found ***
         """
-        if self._loaded:
-            pass
-        else:
-            self.loadIntoMap()
-            self._loaded = 1
+        self.loadIntoMap()
 
         if same_strand == False:
            return self.intervalFile_ptr.CountOverlapsPerBin(deref(interval._bed), ovlp_pct)
