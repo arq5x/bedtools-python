@@ -21,7 +21,7 @@ def main():
             print i.chrom, i.start, i.end, i.strand,
             print hit.chrom, hit.start, hit.end, hit.name, hit.strand,
             # o_start, o_end, o_amt are the start, end and amount of overlap
-            print i.o_start, i.o_end, i.o_amt   
+            print hit.o_start, hit.o_end, hit.o_amt
 
     # Example 2:
     #    Method: IntervalFile.any_hits()

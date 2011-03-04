@@ -279,16 +279,16 @@ public:
     // Searches through each relevant genome bin on the same chromosome
     
     // return all overlaps
-    vector<BED> FindOverlapsPerBin(BED &bed, float overlapFraction = 0.0);                           // ignores strand
-    vector<BED> FindOverlapsPerBin(BED &bed, bool forceStrand = false, float overlapFraction = 0.0); // enforces same strand
+    vector<BED> FindOverlapsPerBin(const BED &bed, float overlapFraction = 0.0);                           // ignores strand
+    vector<BED> FindOverlapsPerBin(const BED &bed, bool forceStrand = false, float overlapFraction = 0.0); // enforces same strand
 
     // return T/F whether or not >=1 overlap exists
-    int FindAnyOverlapsPerBin(BED &bed, float overlapFraction = 0.0);                           // ignores strand
-    int FindAnyOverlapsPerBin(BED &bed, bool forceStrand = false, float overlapFraction = 0.0); // enforces same strand
+    int FindAnyOverlapsPerBin(const BED &bed, float overlapFraction = 0.0);                           // ignores strand
+    int FindAnyOverlapsPerBin(const BED &bed, bool forceStrand = false, float overlapFraction = 0.0); // enforces same strand
 
     // return the number of overlaps found
-    int CountOverlapsPerBin(BED &bed, float overlapFraction = 0.0);                           // ignores strand
-    int CountOverlapsPerBin(BED &bed, bool forceStrand = false, float overlapFraction = 0.0); // enforces same strand
+    int CountOverlapsPerBin(const BED &bed, float overlapFraction = 0.0);                           // ignores strand
+    int CountOverlapsPerBin(const BED &bed, bool forceStrand = false, float overlapFraction = 0.0); // enforces same strand
     
     // the bedfile with which this instance is associated
     string bedFile;

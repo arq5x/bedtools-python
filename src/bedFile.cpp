@@ -103,7 +103,7 @@ BED BedFile::GetNextBed() {
     }
 }
 
-vector<BED> BedFile::FindOverlapsPerBin(BED &bed, float overlapFraction) {
+vector<BED> BedFile::FindOverlapsPerBin(const BED &bed, float overlapFraction) {
     vector<BED> hits;
 
     BIN startBin, endBin;
@@ -120,8 +120,8 @@ vector<BED> BedFile::FindOverlapsPerBin(BED &bed, float overlapFraction) {
             // loop through each feature in this chrom/bin and see if it overlaps
             // with the feature that was passed in.  if so, add the feature to 
             // the list of hits.
-            vector<BED>::const_iterator bedItr = bedMap[bed.chrom][j].begin();
-            vector<BED>::const_iterator bedEnd = bedMap[bed.chrom][j].end();
+            vector<BED>::iterator bedItr = bedMap[bed.chrom][j].begin();
+            vector<BED>::iterator bedEnd = bedMap[bed.chrom][j].end();
 
             for (; bedItr != bedEnd; ++bedItr) {
                 // do we have sufficient overlap?
@@ -131,9 +131,9 @@ vector<BED> BedFile::FindOverlapsPerBin(BED &bed, float overlapFraction) {
                 int overlap  = minEnd - maxStart;
                 if ( (float) (overlap / size) > overlapFraction) 
                 {
-                    bed.o_start = maxStart;
-                    bed.o_end   = minEnd;
-                    bed.o_amt   = overlap;
+                    bedItr->o_start = maxStart;
+                    bedItr->o_end   = minEnd;
+                    bedItr->o_amt   = overlap;
                     hits.push_back(*bedItr);
                 }
             }
@@ -144,7 +144,7 @@ vector<BED> BedFile::FindOverlapsPerBin(BED &bed, float overlapFraction) {
     return hits;
 }
 
-vector<BED> BedFile::FindOverlapsPerBin(BED &bed, bool forceStrand, float overlapFraction) {
+vector<BED> BedFile::FindOverlapsPerBin(const BED &bed, bool forceStrand, float overlapFraction) {
     vector<BED> hits;
 
     BIN startBin, endBin;
@@ -161,8 +161,8 @@ vector<BED> BedFile::FindOverlapsPerBin(BED &bed, bool forceStrand, float overla
             // loop through each feature in this chrom/bin and see if it overlaps
             // with the feature that was passed in.  if so, add the feature to 
             // the list of hits.
-            vector<BED>::const_iterator bedItr = bedMap[bed.chrom][j].begin();
-            vector<BED>::const_iterator bedEnd = bedMap[bed.chrom][j].end();
+            vector<BED>::iterator bedItr = bedMap[bed.chrom][j].begin();
+            vector<BED>::iterator bedEnd = bedMap[bed.chrom][j].end();
 
             for (; bedItr != bedEnd; ++bedItr) {
                 // do we have sufficient overlap?
@@ -172,9 +172,9 @@ vector<BED> BedFile::FindOverlapsPerBin(BED &bed, bool forceStrand, float overla
                 int overlap  = minEnd - maxStart;
                 if ( (float) (overlap / size) > overlapFraction && (bed.strand == bedItr->strand)) 
                 {
-                    bed.o_start = maxStart;
-                    bed.o_end   = minEnd;
-                    bed.o_amt   = overlap;
+                    bedItr->o_start = maxStart;
+                    bedItr->o_end   = minEnd;
+                    bedItr->o_amt   = overlap;
                     hits.push_back(*bedItr);
                 }
             }
@@ -186,7 +186,7 @@ vector<BED> BedFile::FindOverlapsPerBin(BED &bed, bool forceStrand, float overla
 }
 
 
-int BedFile::FindAnyOverlapsPerBin(BED &bed, float overlapFraction) {
+int BedFile::FindAnyOverlapsPerBin(const BED &bed, float overlapFraction) {
     BIN startBin, endBin;
     startBin = (bed.start   >> _binFirstShift);
     endBin   = ((bed.end-1) >> _binFirstShift);
@@ -223,7 +223,7 @@ int BedFile::FindAnyOverlapsPerBin(BED &bed, float overlapFraction) {
 }
 
 
-int BedFile::FindAnyOverlapsPerBin(BED &bed, bool forceStrand, float overlapFraction) {
+int BedFile::FindAnyOverlapsPerBin(const BED &bed, bool forceStrand, float overlapFraction) {
     BIN startBin, endBin;
     startBin = (bed.start >> _binFirstShift);
     endBin = ((bed.end-1) >> _binFirstShift);
@@ -260,7 +260,7 @@ int BedFile::FindAnyOverlapsPerBin(BED &bed, bool forceStrand, float overlapFrac
 }
 
 
-int BedFile::CountOverlapsPerBin(BED &bed, float overlapFraction) {
+int BedFile::CountOverlapsPerBin(const BED &bed, float overlapFraction) {
     BIN startBin, endBin;
     startBin = (bed.start   >> _binFirstShift);
     endBin   = ((bed.end-1) >> _binFirstShift);
@@ -297,7 +297,7 @@ int BedFile::CountOverlapsPerBin(BED &bed, float overlapFraction) {
 }
 
 
-int BedFile::CountOverlapsPerBin(BED &bed, bool forceStrand, float overlapFraction) {
+int BedFile::CountOverlapsPerBin(const BED &bed, bool forceStrand, float overlapFraction) {
     BIN startBin, endBin;
     startBin = (bed.start >> _binFirstShift);
     endBin = ((bed.end-1) >> _binFirstShift);
