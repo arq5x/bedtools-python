@@ -133,7 +133,6 @@ vector<BED> BedFile::FindOverlapsPerBin(const BED &bed, float overlapFraction) {
                 {
                     bedItr->o_start = maxStart;
                     bedItr->o_end   = minEnd;
-                    bedItr->o_amt   = overlap;
                     hits.push_back(*bedItr);
                 }
             }
@@ -174,7 +173,6 @@ vector<BED> BedFile::FindOverlapsPerBin(const BED &bed, bool forceStrand, float 
                 {
                     bedItr->o_start = maxStart;
                     bedItr->o_end   = minEnd;
-                    bedItr->o_amt   = overlap;
                     hits.push_back(*bedItr);
                 }
             }

@@ -41,7 +41,11 @@ cdef class Interval:
     @property
     def other(self):
         return string_vec2list(self._bed.otherFields)
-
+    
+    @property
+    def length(self):
+        return self._bed.end - self.bed.start
+        
     @property
     def o_start(self):
         return self._bed.o_start
@@ -52,7 +56,7 @@ cdef class Interval:
 
     @property
     def o_amt(self):
-        return self._bed.o_amt
+        return self._bed.o_end - self._bed.o_start
 
     def __repr__(self):
         return "Interval(%s:%i..%i)" % (self._bed.chrom.c_str(), self._bed.start, self._bed.end)
@@ -63,7 +67,7 @@ cdef class Interval:
 
 cdef Interval create_interval(BED b):
     cdef Interval pyb = Interval.__new__(Interval)
-    pyb._bed = new BED(b.chrom, b.start, b.end, b.name, b.score, b.strand, b.otherFields, b.o_start, b.o_end, b.o_amt)
+    pyb._bed = new BED(b.chrom, b.start, b.end, b.name, b.score, b.strand, b.otherFields, b.o_start, b.o_end)
     return pyb
 
 

@@ -31,14 +31,14 @@ cdef extern from "bedFile.h":
 
         CHRPOS o_start  # the start of an overlap with another interval
         CHRPOS o_end    # the end of an overlap with another interval
-        int    o_amt    # the amount of overlap (base pairs) with another interval
 
         vector[string] otherFields
         BedLineStatus status
         
         BED()
         BED(string chrom, CHRPOS start, CHRPOS end, string name,
-             string score, string strand, vector[string] otherFields, CHRPOS o_start, CHRPOS o_end, int o_amt)
+             string score, string strand, vector[string] otherFields,
+             CHRPOS o_start, CHRPOS o_end)
         BED(string chrom, CHRPOS start, CHRPOS end)
         BED(string chrom, CHRPOS start, CHRPOS end, string strand)
     

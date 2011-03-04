@@ -133,7 +133,6 @@ struct BED {
     // Coordinates of an overlao
     CHRPOS o_start;
     CHRPOS o_end;
-    int    o_amt;
 
     // Add'l fields for BED12 and/or custom BED annotations
     vector<string> otherFields;
@@ -154,7 +153,6 @@ public:
       strand(""),
       o_start(0),
       o_end(0),
-      o_amt(0),
       otherFields(),
       status()
     {}
@@ -169,7 +167,6 @@ public:
       strand(""),
       o_start(0),
       o_end(0),
-      o_amt(0),
       otherFields(),
       status()
     {}
@@ -184,7 +181,6 @@ public:
       strand(strand),
       o_start(0),
       o_end(0),
-      o_amt(0),
       otherFields(),
       status()
     {}
@@ -199,8 +195,7 @@ public:
       score(score),
       strand(strand),
       o_start(0),
-      o_end(0),
-      o_amt(0),      
+      o_end(0),  
       otherFields(),
       status()
     {}
@@ -216,7 +211,6 @@ public:
       strand(strand),
       o_start(0),
       o_end(0),
-      o_amt(0),
       otherFields(otherFields),
       status()
     {}
@@ -224,7 +218,7 @@ public:
     // BEDALL + overlap
     BED(string chrom, CHRPOS start, CHRPOS end, string name, 
         string score, string strand, vector<string> otherFields,
-        CHRPOS o_start, CHRPOS o_end, CHRPOS o_amt) 
+        CHRPOS o_start, CHRPOS o_end) 
     : chrom(chrom), 
       start(start),
       end(end),
@@ -233,7 +227,6 @@ public:
       strand(strand),
       o_start(o_start),
       o_end(o_end),
-      o_amt(o_amt),
       otherFields(otherFields),
       status()
     {}
