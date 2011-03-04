@@ -16,9 +16,9 @@ Create Cython definitions for the Interval API defined in Interval.h
 cdef extern from "bedFile.h":
     cdef enum BedLineStatus:
         BED_INVALID = -1
-        BED_HEADER  = 0
-        BED_BLANK   = 1
-        BED_VALID   = 2
+        BED_HEADER = 0
+        BED_BLANK = 1
+        BED_VALID = 2
 
     ctypedef unsigned int CHRPOS
     cdef cppclass BED:
@@ -28,21 +28,39 @@ cdef extern from "bedFile.h":
         string name
         string score
         string strand
+
+        CHRPOS o_start  # the start of an overlap with another interval
+        CHRPOS o_end    # the end of an overlap with another interval
+
         vector[string] otherFields
-        vector[BED] overlaps
+        BedLineStatus status
+        
         BED()
         BED(string chrom, CHRPOS start, CHRPOS end, string name,
-             string score, string strand, vector[string] otherFields)
-
-
+             string score, string strand, vector[string] otherFields,
+             CHRPOS o_start, CHRPOS o_end)
+        BED(string chrom, CHRPOS start, CHRPOS end)
+        BED(string chrom, CHRPOS start, CHRPOS end, string strand)
+    
     cdef cppclass BedFile:
         BedFile(string)
         void Open()
         void Close()
-        BedLineStatus GetNextBed(BED &bed, int &lineNum)
+        BED GetNextBed()
         void loadBedFileIntoMap()
 
+        # "all"
         # this version doesn't care if the strands match.
-        vector[BED] FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, float overlapFraction)
-        # if strand is passed, require that the strands match,
-        vector[BED] FindOverlapsPerBin(string chrom, CHRPOS start, CHRPOS end, string strand, float overlapFraction)
+        vector[BED] FindOverlapsPerBin(BED bed, float overlapFraction)
+        # if forceStrand is true, require that the strands match,
+        vector[BED] FindOverlapsPerBin(BED bed, bool forceStrand, float overlapFraction)
+
+        # "any"
+        int FindAnyOverlapsPerBin(BED bed, float overlapFraction)
+        # if forceStrand is true, require that the strands match,
+        int FindAnyOverlapsPerBin(BED bed, bool forceStrand, float overlapFraction)
+
+        # "count"
+        int CountOverlapsPerBin(BED bed, float overlapFraction)
+        # if forceStrand is true, require that the strands match,
+        int CountOverlapsPerBin(BED bed, bool forceStrand, float overlapFraction)
