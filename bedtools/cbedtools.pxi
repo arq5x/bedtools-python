@@ -20,7 +20,9 @@ cdef extern from "bedFile.h":
         BED_BLANK = 1
         BED_VALID = 2
 
-    ctypedef unsigned int CHRPOS
+    ctypedef unsigned int   CHRPOS
+    ctypedef unsigned short USHRT
+    
     cdef cppclass BED:
         string chrom
         CHRPOS start
@@ -28,25 +30,33 @@ cdef extern from "bedFile.h":
         string name
         string score
         string strand
-
+        vector[string] otherFields
         CHRPOS o_start  # the start of an overlap with another interval
         CHRPOS o_end    # the end of an overlap with another interval
-
-        vector[string] otherFields
+        USHRT bedType
+        bool isGff
+        bool isVcf
         BedLineStatus status
         
+        # constructors
         BED()
         BED(string chrom, CHRPOS start, CHRPOS end, string name,
              string score, string strand, vector[string] otherFields,
-             CHRPOS o_start, CHRPOS o_end)
+             CHRPOS o_start, CHRPOS o_end, 
+             USHRT bedType, bool isGff, bool isVcf, BedLineStatus status)
+             
         BED(string chrom, CHRPOS start, CHRPOS end)
         BED(string chrom, CHRPOS start, CHRPOS end, string strand)
+        
+        # methods
+        string reportBed()
+        
     
     cdef cppclass BedFile:
         BedFile(string)
         void Open()
         void Close()
-        BED GetNextBed()
+        BED  GetNextBed()
         void loadBedFileIntoMap()
 
         # "all"

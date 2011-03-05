@@ -129,17 +129,20 @@ struct BED {
     string name;
     string score;
     string strand;
-    
+    // Add'l fields for BED12 and/or custom BED annotations
+    vector<string> otherFields;
     // Coordinates of an overlao
     CHRPOS o_start;
     CHRPOS o_end;
-
-    // Add'l fields for BED12 and/or custom BED annotations
-    vector<string> otherFields;
-
+    // how many columns
+    unsigned short bedType;
+    // is it a GFF or VCF interval?
+    bool isGff;
+    bool isVcf;
+    // valid, header, blank line, or EOF
     BedLineStatus   status;
 
-    
+
 public:
     // constructors
 
@@ -151,9 +154,12 @@ public:
       name(""),
       score(""),
       strand(""),
+      otherFields(),
       o_start(0),
       o_end(0),
-      otherFields(),
+      bedType(0),
+      isGff(false),
+      isVcf(false),
       status()
     {}
         
@@ -165,38 +171,47 @@ public:
       name(""),
       score(""),
       strand(""),
+      otherFields(),
       o_start(0),
       o_end(0),
-      otherFields(),
+      bedType(3),
+      isGff(false),
+      isVcf(false),
       status()
     {}
 
     // BED4
     BED(string chrom, CHRPOS start, CHRPOS end, string strand) 
-    : chrom(chrom), 
+    : chrom(chrom),
       start(start),
       end(end),
       name(""),
       score(""),
       strand(strand),
+      otherFields(),
       o_start(0),
       o_end(0),
-      otherFields(),
+      bedType(3),
+      isGff(false),
+      isVcf(false),
       status()
     {}
 
     // BED6
     BED(string chrom, CHRPOS start, CHRPOS end, string name, 
         string score, string strand) 
-    : chrom(chrom), 
+    : chrom(chrom),
       start(start),
       end(end),
       name(name),
       score(score),
       strand(strand),
-      o_start(0),
-      o_end(0),  
       otherFields(),
+      o_start(0),
+      o_end(0),
+      bedType(6),
+      isGff(false),
+      isVcf(false),
       status()
     {}
     
@@ -209,28 +224,84 @@ public:
       name(name),
       score(score),
       strand(strand),
+      otherFields(otherFields),
       o_start(0),
       o_end(0),
-      otherFields(otherFields),
+      bedType(0),
+      isGff(false),
+      isVcf(false),
       status()
     {}
     
     // BEDALL + overlap
     BED(string chrom, CHRPOS start, CHRPOS end, string name, 
         string score, string strand, vector<string> otherFields,
-        CHRPOS o_start, CHRPOS o_end) 
+        CHRPOS o_start, CHRPOS o_end,
+        unsigned short bedType, bool isGff, bool isVcf, BedLineStatus status) 
     : chrom(chrom), 
       start(start),
       end(end),
       name(name),
       score(score),
       strand(strand),
+      otherFields(otherFields),
       o_start(o_start),
       o_end(o_end),
-      otherFields(otherFields),
-      status()
+      bedType(bedType),
+      isGff(isGff),
+      isVcf(isVcf),
+      status(status)
     {}
     
+
+    //Writes the entire, _original_ BED/GFF/VCF entry.
+    inline string reportBed() {
+        
+        ostringstream out;
+        // BED
+        if (isGff == false && isVcf == false) {
+            if (bedType == 3) {
+                out << chrom << "\t" << start << "\t" << end;
+            }
+            else if (bedType == 4) {
+                out << chrom << "\t" << start << "\t" << end << "\t" << name;
+            }
+            else if (bedType == 5) {
+                out << chrom << "\t" << start << "\t" << end << "\t" << name << "\t" 
+                    << score;
+            
+            }
+            else if (bedType == 6) {
+                out << chrom << "\t" << start << "\t" << end << "\t" << name << "\t" 
+                    << score << "\t" << strand;
+            }
+            else if (bedType > 6) {
+                out << chrom << "\t" << start << "\t" << end << "\t" << name << "\t" 
+                    << score << "\t" << strand;
+                    
+                vector<string>::const_iterator othIt = otherFields.begin(); 
+                vector<string>::const_iterator othEnd = otherFields.end(); 
+                for ( ; othIt != othEnd; ++othIt) {
+                    out << "\t" << *othIt;
+                }
+            }
+        }
+        // VCF
+        else if (isGff == false && isVcf == true) {
+            out << chrom << "\t" << start+1;
+            vector<string>::const_iterator othIt = otherFields.begin(); 
+            vector<string>::const_iterator othEnd = otherFields.end(); 
+            for ( ; othIt != othEnd; ++othIt) {
+                out << "\t" << *othIt;
+            }
+        }   
+        // GFF
+        else if (bedType == 9) {
+            out << chrom << "\t" << otherFields[0] << "\t" << name << "\t" << start+1 << "\t" 
+                << end   << "\t" << score << "\t" << strand << "\t" << otherFields[1] << "\t" <<  otherFields[2];
+        }
+        return out.str();
+    }
 }; // BED
 
 
@@ -285,8 +356,8 @@ public:
     
     // the bedfile with which this instance is associated
     string bedFile;
-    unsigned int bedType;  // 3-6, 12 for BED
-                           // 9 for GFF
+    unsigned short bedType;  // 3-6, 12 for BED
+                             // 9 for GFF
     
     // Main data structires used by BEDTools
     masterBedMap         bedMap;
@@ -347,7 +418,8 @@ private:
                 else {
                     // it's BED format if columns 2 and 3 are integers
                     if (isInteger(lineVector[1]) && isInteger(lineVector[2])) {
-                        setGff(false);    
+                        setGff(false);
+                        setVcf(false);
                         setFileType(BED_FILETYPE);
                         setBedType(numFields);       // we now expect numFields columns in each line
                         if (parseBedLine(bed, lineVector, numFields) == true) return BED_VALID;
@@ -363,6 +435,7 @@ private:
                     // it's GFF, assuming columns columns 4 and 5 are numeric and we have 9 fields total.
                     else if ((numFields == 9) && isInteger(lineVector[3]) && isInteger(lineVector[4])) {
                         setGff(true);
+                        setVcf(false);
                         setFileType(GFF_FILETYPE);
                         setBedType(numFields);       // we now expect numFields columns in each line
                         if (parseGffLine(bed, lineVector, numFields) == true) return BED_VALID;
@@ -396,10 +469,13 @@ private:
 
         // process as long as the number of fields in this 
         // line matches what we expect for this file.
-        if (numFields == this->bedType) {        
-            bed.chrom = lineVector[0];
-            bed.start = atoi(lineVector[1].c_str());
-            bed.end = atoi(lineVector[2].c_str());
+        if (numFields == this->bedType) {
+            bed.chrom   = lineVector[0];
+            bed.start   = atoi(lineVector[1].c_str());
+            bed.end     = atoi(lineVector[2].c_str());
+            bed.bedType = this->bedType;
+            bed.isGff   = this->_isGff;
+            bed.isVcf   = this->_isVcf;
             
             if (this->bedType == 4) {
                 bed.name = lineVector[3];
@@ -462,10 +538,13 @@ private:
     template <typename T>
     inline bool parseVcfLine (T &bed, const vector<string> &lineVector, unsigned int numFields) {
         if (numFields == this->bedType) { 
-            bed.chrom  = lineVector[0];
-            bed.start  = atoi(lineVector[1].c_str()) - 1;  // VCF is one-based
-            bed.end    = bed.start + lineVector[3].size(); // VCF 4.0 stores the size of the affected REF allele.
-            bed.strand = "+";
+            bed.chrom   = lineVector[0];
+            bed.start   = atoi(lineVector[1].c_str()) - 1;  // VCF is one-based
+            bed.end     = bed.start + lineVector[3].size(); // VCF 4.0 stores the size of the affected REF allele.
+            bed.strand  = "+";
+            bed.bedType = this->bedType;
+            bed.isGff   = this->_isGff;
+            bed.isVcf   = this->_isVcf;
             // construct the name from the ref and alt alleles.  
             // if it's an annotated variant, add the rsId as well.
             bed.name   = lineVector[3] + "/" + lineVector[4];
@@ -516,11 +595,14 @@ private:
             if (this->bedType == 9 && _isGff) {
                 bed.chrom = lineVector[0];
                 // substract 1 to force the start to be BED-style
-                bed.start  = atoi(lineVector[3].c_str()) - 1;
-                bed.end    = atoi(lineVector[4].c_str());
-                bed.name   = lineVector[2];
-                bed.score  = lineVector[5];
-                bed.strand = lineVector[6].c_str();
+                bed.start   = atoi(lineVector[3].c_str()) - 1;
+                bed.end     = atoi(lineVector[4].c_str());
+                bed.name    = lineVector[2];
+                bed.score   = lineVector[5];
+                bed.strand  = lineVector[6].c_str();
+                bed.bedType = this->bedType;
+                bed.isGff   = this->_isGff;
+                bed.isVcf   = this->_isVcf;
                 bed.otherFields.push_back(lineVector[1]);  // add GFF "source". unused in BED
                 bed.otherFields.push_back(lineVector[7]);  // add GFF "fname". unused in BED
                 bed.otherFields.push_back(lineVector[8]);  // add GFF "group". unused in BED
@@ -554,306 +636,6 @@ private:
         }
         return false;
     }
-    
-    
-public:
-    
-    /*
-        reportBedTab
-
-        Writes the _original_ BED entry with a TAB
-        at the end of the line.
-        Works for BED3 - BED6.
-    */
-    template <typename T>
-    inline void reportBedTab(const T &bed) {
-        // BED
-        if (_isGff == false && _isVcf == false) {
-            if (this->bedType == 3) {
-                printf ("%s\t%d\t%d\t", bed.chrom.c_str(), bed.start, bed.end);
-            }
-            else if (this->bedType == 4) {
-                printf ("%s\t%d\t%d\t%s\t", bed.chrom.c_str(), bed.start, bed.end, bed.name.c_str());
-            }
-            else if (this->bedType == 5) {
-                printf ("%s\t%d\t%d\t%s\t%s\t", bed.chrom.c_str(), bed.start, bed.end, bed.name.c_str(), 
-                                                bed.score.c_str());
-            }
-            else if (this->bedType == 6) {
-                printf ("%s\t%d\t%d\t%s\t%s\t%s\t", bed.chrom.c_str(), bed.start, bed.end, bed.name.c_str(), 
-                                                    bed.score.c_str(), bed.strand.c_str());
-            }
-            else if (this->bedType > 6) {
-                printf ("%s\t%d\t%d\t%s\t%s\t%s\t", bed.chrom.c_str(), bed.start, bed.end, bed.name.c_str(), 
-                                                    bed.score.c_str(), bed.strand.c_str());
-
-                vector<string>::const_iterator othIt = bed.otherFields.begin(); 
-                vector<string>::const_iterator othEnd = bed.otherFields.end(); 
-                for ( ; othIt != othEnd; ++othIt) {
-                    printf("%s\t", othIt->c_str());
-                }
-            }
-        }
-        // VCF
-        else if (_isGff == false && _isVcf == true) {
-            printf ("%s\t%d\t", bed.chrom.c_str(), bed.start+1);
-
-            vector<string>::const_iterator othIt = bed.otherFields.begin(); 
-            vector<string>::const_iterator othEnd = bed.otherFields.end(); 
-            for ( ; othIt != othEnd; ++othIt) {
-                printf("%s\t", othIt->c_str());
-            }
-        }   
-        // GFF
-        else if (this->bedType == 9) {
-            printf ("%s\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t", bed.chrom.c_str(), bed.otherFields[0].c_str(),
-                                                             bed.name.c_str(), bed.start+1, bed.end, 
-                                                             bed.score.c_str(), bed.strand.c_str(),
-                                                             bed.otherFields[1].c_str(), bed.otherFields[2].c_str());
-        }
-    }
-
-
-
-    /*
-        reportBedNewLine
-
-        Writes the _original_ BED entry with a NEWLINE
-        at the end of the line.
-        Works for BED3 - BED6.
-    */
-    template <typename T>
-    inline void reportBedNewLine(const T &bed) {
-        //BED
-        if (_isGff == false && _isVcf == false) {
-            if (this->bedType == 3) {
-                printf ("%s\t%d\t%d\n", bed.chrom.c_str(), bed.start, bed.end);
-            }
-            else if (this->bedType == 4) {
-                printf ("%s\t%d\t%d\t%s\n", bed.chrom.c_str(), bed.start, bed.end, bed.name.c_str());
-            }
-            else if (this->bedType == 5) {
-                printf ("%s\t%d\t%d\t%s\t%s\n", bed.chrom.c_str(), bed.start, bed.end, bed.name.c_str(), 
-                                                bed.score.c_str());
-            }
-            else if (this->bedType == 6) {
-                printf ("%s\t%d\t%d\t%s\t%s\t%s\n", bed.chrom.c_str(), bed.start, bed.end, bed.name.c_str(), 
-                                                    bed.score.c_str(), bed.strand.c_str());
-            }
-            else if (this->bedType > 6) {
-                printf ("%s\t%d\t%d\t%s\t%s\t%s", bed.chrom.c_str(), bed.start, bed.end, bed.name.c_str(), 
-                                                    bed.score.c_str(), bed.strand.c_str());
-
-                vector<string>::const_iterator othIt = bed.otherFields.begin(); 
-                vector<string>::const_iterator othEnd = bed.otherFields.end(); 
-                for ( ; othIt != othEnd; ++othIt) {
-                    printf("\t%s", othIt->c_str());
-                }
-                printf("\n");
-            }
-        }
-        // VCF
-        else if (_isGff == false && _isVcf == true) {
-            printf ("%s\t%d\t", bed.chrom.c_str(), bed.start+1);
-
-            vector<string>::const_iterator othIt = bed.otherFields.begin(); 
-            vector<string>::const_iterator othEnd = bed.otherFields.end(); 
-            for ( ; othIt != othEnd; ++othIt) {
-                printf("%s\t", othIt->c_str());
-            }
-            printf("\n");
-        }
-        //GFF
-        else if (this->bedType == 9) {
-            printf ("%s\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%s\n", bed.chrom.c_str(), bed.otherFields[0].c_str(),
-                                                             bed.name.c_str(), bed.start+1, bed.end, 
-                                                             bed.score.c_str(), bed.strand.c_str(),
-                                                             bed.otherFields[1].c_str(), bed.otherFields[2].c_str());
-        }
-    }
-
-
-
-    /*
-        reportBedRangeNewLine
-
-        Writes a custom start->end for a BED entry
-        with a NEWLINE at the end of the line.
-
-        Works for BED3 - BED6.
-    */
-    template <typename T>
-    inline void reportBedRangeTab(const T &bed, CHRPOS start, CHRPOS end) {
-        // BED
-        if (_isGff == false && _isVcf == false) {
-            if (this->bedType == 3) {
-                printf ("%s\t%d\t%d\t", bed.chrom.c_str(), start, end);
-            }
-            else if (this->bedType == 4) {
-                printf ("%s\t%d\t%d\t%s\t", bed.chrom.c_str(), start, end, bed.name.c_str());
-            }
-            else if (this->bedType == 5) {
-                printf ("%s\t%d\t%d\t%s\t%s\t", bed.chrom.c_str(), start, end, bed.name.c_str(), 
-                                                bed.score.c_str());
-            }
-            else if (this->bedType == 6) {
-                printf ("%s\t%d\t%d\t%s\t%s\t%s\t", bed.chrom.c_str(), start, end, bed.name.c_str(), 
-                                                    bed.score.c_str(), bed.strand.c_str());
-            }
-            else if (this->bedType > 6) {
-                printf ("%s\t%d\t%d\t%s\t%s\t%s\t", bed.chrom.c_str(), start, end, bed.name.c_str(), 
-                                                    bed.score.c_str(), bed.strand.c_str());
-
-                vector<string>::const_iterator othIt = bed.otherFields.begin(); 
-                vector<string>::const_iterator othEnd = bed.otherFields.end(); 
-                for ( ; othIt != othEnd; ++othIt) {
-                    printf("%s\t", othIt->c_str());
-                }
-            }
-        }
-        // VCF
-        else if (_isGff == false && _isVcf == true) {
-            printf ("%s\t%d\t", bed.chrom.c_str(), bed.start+1);
-
-            vector<string>::const_iterator othIt = bed.otherFields.begin(); 
-            vector<string>::const_iterator othEnd = bed.otherFields.end(); 
-            for ( ; othIt != othEnd; ++othIt) {
-                printf("%s\t", othIt->c_str());
-            }
-        }
-        // GFF
-        else if (this->bedType == 9) {
-            printf ("%s\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t", bed.chrom.c_str(), bed.otherFields[0].c_str(),
-                                                             bed.name.c_str(), start+1, end, 
-                                                             bed.score.c_str(), bed.strand.c_str(),
-                                                             bed.otherFields[1].c_str(), bed.otherFields[2].c_str());
-        }
-    }
-
-
-
-    /*
-        reportBedRangeTab
-
-        Writes a custom start->end for a BED entry 
-        with a TAB at the end of the line.
-
-        Works for BED3 - BED6.
-    */
-    template <typename T>
-    inline void reportBedRangeNewLine(const T &bed, CHRPOS start, CHRPOS end) {
-        // BED
-        if (_isGff == false && _isVcf == false) {
-            if (this->bedType == 3) {
-                printf ("%s\t%d\t%d\n", bed.chrom.c_str(), start, end);
-            }
-            else if (this->bedType == 4) {
-                printf ("%s\t%d\t%d\t%s\n", bed.chrom.c_str(), start, end, bed.name.c_str());
-            }
-            else if (this->bedType == 5) {
-                printf ("%s\t%d\t%d\t%s\t%s\n", bed.chrom.c_str(), start, end, bed.name.c_str(), 
-                                                bed.score.c_str());
-            }
-            else if (this->bedType == 6) {
-                printf ("%s\t%d\t%d\t%s\t%s\t%s\n", bed.chrom.c_str(), start, end, bed.name.c_str(), 
-                                                    bed.score.c_str(), bed.strand.c_str());
-            }
-            else if (this->bedType > 6) {
-                printf ("%s\t%d\t%d\t%s\t%s\t%s", bed.chrom.c_str(), start, end, bed.name.c_str(), 
-                                                    bed.score.c_str(), bed.strand.c_str());
-
-                vector<string>::const_iterator othIt = bed.otherFields.begin(); 
-                vector<string>::const_iterator othEnd = bed.otherFields.end(); 
-                for ( ; othIt != othEnd; ++othIt) {
-                    printf("\t%s", othIt->c_str());
-                }
-                printf("\n");
-            }
-        }
-        // VCF
-        else if (_isGff == false && _isVcf == true) {
-            printf ("%s\t%d\t", bed.chrom.c_str(), bed.start+1);
-
-            vector<string>::const_iterator othIt = bed.otherFields.begin(); 
-            vector<string>::const_iterator othEnd = bed.otherFields.end(); 
-            for ( ; othIt != othEnd; ++othIt) {
-                printf("%s\t", othIt->c_str());
-            }
-            printf("\n");
-        }
-        // GFF
-        else if (this->bedType == 9) {  // add 1 to the start for GFF
-            printf ("%s\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%s\n", bed.chrom.c_str(), bed.otherFields[0].c_str(),
-                                                             bed.name.c_str(), start+1, end, 
-                                                             bed.score.c_str(), bed.strand.c_str(),
-                                                             bed.otherFields[1].c_str(), bed.otherFields[2].c_str());
-        }
-    }
-
-
-    /*
-        reportNullBedTab
-    */
-    void reportNullBedTab() {
-
-        if (_isGff == false) {
-            if (this->bedType == 3) {
-                printf (".\t-1\t-1\t");
-            }
-            else if (this->bedType == 4) {
-                printf (".\t-1\t-1\t.\t");
-            }
-            else if (this->bedType == 5) {
-                printf (".\t-1\t-1\t.\t-1\t");
-            }
-            else if (this->bedType == 6) {
-                printf (".\t-1\t-1\t.\t-1\t.\t");
-            }
-            else if (this->bedType > 6) {
-                printf (".\t-1\t-1\t.\t-1\t.\t");
-                for (unsigned int i = 6; i < this->bedType; ++i) {
-                    printf(".\t");
-                }
-            }
-        }   
-        else if (this->bedType == 9) {
-            printf (".\t.\t.\t-1\t-1\t-1\t.\t.\t.\t");
-        }
-    }
-
-
-    /*
-        reportNullBedTab
-    */
-    void reportNullBedNewLine() {
-
-        if (_isGff == false) {
-            if (this->bedType == 3) {
-                printf (".\t-1\t-1\n");
-            }
-            else if (this->bedType == 4) {
-                printf (".\t-1\t-1\t.\n");
-            }
-            else if (this->bedType == 5) {
-                printf (".\t-1\t-1\t.\t-1\n");
-            }
-            else if (this->bedType == 6) {
-                printf (".\t-1\t-1\t.\t-1\t.\n");
-            }
-            else if (this->bedType > 6) {
-                printf (".\t-1\t-1\t.\t-1\t.");
-                for (unsigned int i = 6; i < this->bedType; ++i) {
-                    printf("\t.");
-                }
-                printf("\n");
-            }
-        }   
-        else if (this->bedType == 9) {
-            printf (".\t.\t.\t-1\t-1\t-1\t.\t.\t.\n");
-        }
-    }
-
-    
 };
 
 #endif /* BEDFILE_H */
