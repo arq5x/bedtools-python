@@ -9,8 +9,7 @@ def main():
     """
     Print each BED feature in a BED file.
     """    
-    exons = IntervalFile("bedtools/tests/data/exons.hg18.chr21.bed")
-    for exon in exons:
+    for exon in IntervalFile("bedtools/tests/data/exons.hg18.chr21.bed"):
         print exon
 
 
