@@ -25,7 +25,7 @@ bedtools-python
     python setup.py install
     ./test.sh
     # Try it out
-    ./example-intersect.py
+    ./ex1-intersect.py
 
 ----------------
 3. The API
