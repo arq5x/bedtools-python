@@ -237,7 +237,7 @@ public:
     BED(string chrom, CHRPOS start, CHRPOS end, string name, 
         string score, string strand, vector<string> otherFields,
         CHRPOS o_start, CHRPOS o_end,
-        unsigned short bedType, bool isGff, bool isVcf, BedLineStatus status) 
+        unsigned short bedType, bool isGff, bool isVcf, BedLineStatus status)
     : chrom(chrom), 
       start(start),
       end(end),
