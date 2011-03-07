@@ -62,11 +62,8 @@ cdef class Interval:
     def o_amt(self):
         return self._bed.o_end - self._bed.o_start
 
-    def __str__(self):
-        echo =  self._bed.reportBed()
-        return echo.c_str()
-        #return ""
-        #return "Interval(%s:%i..%i)" % (self._bed.chrom.c_str(), self._bed.start, self._bed.end)
+    def __repr__(self):
+        return self._bed.reportBed().c_str()
 
     def __dealloc__(self):
         del self._bed
