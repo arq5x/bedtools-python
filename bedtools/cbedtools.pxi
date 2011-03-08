@@ -59,18 +59,19 @@ cdef extern from "bedFile.h":
         BED  GetNextBed()
         void loadBedFileIntoMap()
 
-        # "all"
+        ### "all" ###
         # this version doesn't care if the strands match.
         vector[BED] FindOverlapsPerBin(BED bed, float overlapFraction)
         # if forceStrand is true, require that the strands match,
         vector[BED] FindOverlapsPerBin(BED bed, bool forceStrand, float overlapFraction)
 
-        # "any"
+        ### "any" ###
         int FindAnyOverlapsPerBin(BED bed, float overlapFraction)
         # if forceStrand is true, require that the strands match,
         int FindAnyOverlapsPerBin(BED bed, bool forceStrand, float overlapFraction)
 
-        # "count"
+
+        ### "count" ###
         int CountOverlapsPerBin(BED bed, float overlapFraction)
         # if forceStrand is true, require that the strands match,
         int CountOverlapsPerBin(BED bed, bool forceStrand, float overlapFraction)
