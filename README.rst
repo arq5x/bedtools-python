@@ -25,7 +25,11 @@ bedtools-python
     python setup.py install
     ./test.sh
     # Try it out
-    ./ex1-intersect.py
+    examples/ex0-echo.py
+    examples/ex1-intersect.py
+    examples/ex2-pysam-and-bedtools.py
+    examples/ex3-fasta-from-bed.py
+    examples/ex4-window.py
 
 ----------------
 3. The API
@@ -35,9 +39,8 @@ Still need to document this.
 ---------------
 4. Examples
 ---------------
-4a. Intersect one file against another (akin to intersectBed)
---------------------------------------------------------------
 
+Below is brief example to whet your appetite.  For more details on how to use the API, check out the examples/ directory.
 ::
 
   >>> from bedtools import IntervalFile
