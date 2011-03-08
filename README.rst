@@ -40,7 +40,7 @@ Still need to document this.
 4. Examples
 ---------------
 
-Below is brief example to whet your appetite.  For more details on how to use the API, check out the examples/ directory.
+Below is a brief example to whet your appetite.  For more details on how to use the API, check out the examples/ directory.
 ::
 
   >>> from bedtools import IntervalFile
@@ -55,10 +55,3 @@ Below is brief example to whet your appetite.  For more details on how to use th
   ...      print ex.chrom,  ex.start,  ex.end,\
   ...            hit.chrom, hit.start, hit.end,
   chr21 9928613 9928911 chr21 9928614 9928678
-
-    
-    
-    
-    
-    
-    ...
