@@ -1,1 +1,1 @@
-from cbedtools import Interval, IntervalFile
+from cbedtools import Interval, IntervalFile, overlap

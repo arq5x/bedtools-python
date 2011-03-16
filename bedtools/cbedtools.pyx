@@ -94,6 +94,10 @@ cdef list bed_vec2list(vector[BED] bv):
     return l
 
 
+def overlap(int s1, int s2, int e1, int e2):
+    return min(e1,e2) - max(s1,s2)
+
+
 cdef class IntervalFile:
     cdef BedFile *intervalFile_ptr
     cdef bint _loaded
