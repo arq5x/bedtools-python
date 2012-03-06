@@ -8,7 +8,7 @@ def main():
     # setup a reverse_complement translation
     rev_table=string.maketrans('ACGTacgt', 'TGCAtgca')
     def revcomp(seq, rev_table):
-        return seq.translate(rev_table)
+        return seq[::-1].translate(rev_table)
         
     # open your fasta file
     fasta  = Fastafile("bedtools/tests/data/chr21.fa")
